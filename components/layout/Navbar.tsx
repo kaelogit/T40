@@ -36,7 +36,7 @@ function NavbarLogo() {
           width={200}
           height={68}
           priority
-          className="block h-11 w-auto lg:h-12 object-contain"
+          className="block h-12 w-auto lg:h-12 object-contain"
           style={{ width: "auto" }}
           onError={() => setLogoError(true)}
         />
@@ -93,8 +93,24 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const headerRef = useRef<HTMLElement>(null);
+  const navBarRef = useRef<HTMLDivElement>(null);
   const [mobileMenuTop, setMobileMenuTop] = useState(80);
+
+  const updateMobileMenuTop = () => {
+    if (navBarRef.current) {
+      setMobileMenuTop(navBarRef.current.getBoundingClientRect().bottom);
+    }
+  };
+
+  const toggleMobileMenu = () => {
+    if (!isMobileMenuOpen) {
+      updateMobileMenuTop();
+    }
+    setIsMobileMenuOpen((open) => !open);
+    if (isMobileMenuOpen) {
+      setOpenDropdown(null);
+    }
+  };
 
   useEffect(() => {
     if (isMobileSearchOpen && searchInputRef.current) searchInputRef.current.focus();
@@ -207,19 +223,19 @@ export default function Navbar() {
   useEffect(() => {
     if (!isMobileMenuOpen) return;
 
-    const updateMobileMenuTop = () => {
-      if (headerRef.current) {
-        setMobileMenuTop(headerRef.current.getBoundingClientRect().bottom);
+    const updateTop = () => {
+      if (navBarRef.current) {
+        setMobileMenuTop(navBarRef.current.getBoundingClientRect().bottom);
       }
     };
 
-    updateMobileMenuTop();
-    window.addEventListener("scroll", updateMobileMenuTop, { passive: true });
-    window.addEventListener("resize", updateMobileMenuTop);
+    updateTop();
+    window.addEventListener("scroll", updateTop, { passive: true });
+    window.addEventListener("resize", updateTop);
 
     return () => {
-      window.removeEventListener("scroll", updateMobileMenuTop);
-      window.removeEventListener("resize", updateMobileMenuTop);
+      window.removeEventListener("scroll", updateTop);
+      window.removeEventListener("resize", updateTop);
     };
   }, [isMobileMenuOpen]);
 
@@ -315,12 +331,10 @@ export default function Navbar() {
 
   return (
     <>
-      <header
-        ref={headerRef}
-        className={`sticky top-0 w-full bg-t40-white border-b border-t40-grey/10 transition-all duration-300 ${isMobileMenuOpen ? "z-[70]" : "z-50"}`}
-      >
-        <div className="t40-container relative">
-          <div className="flex items-center justify-between h-20">
+      <header className="sticky top-0 z-50 w-full bg-t40-white border-b border-t40-grey/10 transition-all duration-300">
+        <div ref={navBarRef} className="relative z-[60] bg-t40-white">
+          <div className="t40-container relative">
+            <div className="flex items-center justify-between h-20">
             
             {/* MOBILE SEARCH OVERLAY */}
             {isMobileSearchOpen ? (
@@ -347,12 +361,25 @@ export default function Navbar() {
                 <div className="flex items-center lg:hidden flex-1">
                   <button
                     type="button"
-                    aria-label="Open menu"
+                    aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
                     aria-expanded={isMobileMenuOpen}
-                    onClick={() => setIsMobileMenuOpen(true)}
+                    onClick={toggleMobileMenu}
                     className="relative z-[61] flex h-11 w-11 shrink-0 items-center justify-center -ml-2 text-t40-black"
                   >
-                    <Menu size={24} strokeWidth={1.5} />
+                    <Menu
+                      size={24}
+                      strokeWidth={1.75}
+                      className={`absolute transition-all duration-200 ${
+                        isMobileMenuOpen ? "scale-0 opacity-0 rotate-90" : "scale-100 opacity-100 rotate-0"
+                      }`}
+                    />
+                    <X
+                      size={24}
+                      strokeWidth={1.75}
+                      className={`absolute transition-all duration-200 ${
+                        isMobileMenuOpen ? "scale-100 opacity-100 rotate-0" : "scale-0 opacity-0 -rotate-90"
+                      }`}
+                    />
                   </button>
                 </div>
 
@@ -433,36 +460,25 @@ export default function Navbar() {
             )}
           </div>
         </div>
+        </div>
+      </header>
 
-        {/* 5. MOBILE MENU DRAWER */}
-        {isMobileMenuOpen && !isMobileSearchOpen && (
-          <>
-            <button
-              type="button"
-              aria-label="Close menu"
-              className="lg:hidden fixed inset-x-0 bottom-0 bg-t40-black/40 z-[60] backdrop-blur-[2px]"
-              style={{ top: mobileMenuTop }}
-              onClick={closeMobileMenu}
-            />
-            <div
-              className="lg:hidden fixed left-0 right-0 bottom-0 bg-t40-white z-[70] overflow-y-auto animate-in slide-in-from-left duration-300"
-              style={{ top: mobileMenuTop }}
-            >
-              <div className="flex flex-col min-h-full">
-                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-t40-light bg-t40-white px-4">
-                  <span className="text-xs font-bold uppercase tracking-widest font-heading text-t40-black">
-                    Menu
-                  </span>
-                  <button
-                    type="button"
-                    onClick={closeMobileMenu}
-                    className="flex h-10 w-10 items-center justify-center text-t40-black"
-                    aria-label="Close menu"
-                  >
-                    <X size={22} strokeWidth={2} />
-                  </button>
-                </div>
-                <div className="flex-1 p-4 space-y-1">
+      {/* MOBILE MENU — rendered outside header so position measurement stays correct */}
+      {isMobileMenuOpen && !isMobileSearchOpen && (
+        <>
+          <button
+            type="button"
+            aria-label="Close menu"
+            className="lg:hidden fixed inset-x-0 bottom-0 bg-t40-black/40 z-40 backdrop-blur-[2px]"
+            style={{ top: mobileMenuTop }}
+            onClick={closeMobileMenu}
+          />
+          <div
+            className="lg:hidden fixed left-0 right-0 bottom-0 bg-t40-white z-40 overflow-y-auto animate-in slide-in-from-left duration-300"
+            style={{ top: mobileMenuTop }}
+          >
+            <div className="flex flex-col min-h-full">
+              <div className="flex-1 p-4 space-y-1">
                   {menuItems.map((item) => (
                     <div key={item.label} className="border-b border-t40-light last:border-none">
                       <div className="flex justify-between items-center">
@@ -529,13 +545,10 @@ export default function Navbar() {
                 </div>
               </div>
             </div>
-          </>
-        )}
-
-      </header>
+        </>
+      )}
 
       <CartDrawer isOpen={isDrawerOpen} setIsOpen={setDrawerOpen} />
-      
     </>
   );
 }
