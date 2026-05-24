@@ -3,8 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState, useRef, useEffect, useLayoutEffect } from "react";
-import { createPortal } from "react-dom";
+import { useState, useRef, useEffect } from "react";
 import { Search, ShoppingBag, Menu, X, ChevronDown, Loader2 } from "lucide-react";
 
 import { useCart } from "@/context/CartContext"; 
@@ -18,7 +17,6 @@ import { SHOP_COLLECTIONS, shopCollectionHref } from "@/lib/shop/collections";
 import { searchProducts } from "@/lib/search/searchProducts";
 
 const supabase = createClient();
-
 const LOGO_SRC = "/t40-logo.png";
 
 function NavbarLogo() {
@@ -27,7 +25,7 @@ function NavbarLogo() {
   return (
     <Link
       href="/"
-      className="inline-flex shrink-0 w-fit leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d94625] focus-visible:ring-offset-2"
+      className="inline-flex shrink-0 w-fit leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d94625]"
       aria-label="T40 Perfumes home"
     >
       {!logoError ? (
@@ -38,7 +36,6 @@ function NavbarLogo() {
           height={68}
           priority
           className="block h-12 w-auto lg:h-12 object-contain"
-          style={{ width: "auto" }}
           onError={() => setLogoError(true)}
         />
       ) : (
@@ -80,6 +77,13 @@ const BASE_CATEGORIES = [
   },
 ];
 
+const MOBILE_UTILITY_LINKS = [
+  { label: "About", href: "/about" },
+  { label: "Journal", href: "/blog" },
+  { label: "Contact", href: "/contact" },
+  { label: "FAQ", href: "/faq" },
+];
+
 export default function Navbar() {
   const router = useRouter();
   const { cartCount, isDrawerOpen, setDrawerOpen } = useCart(); 
@@ -94,37 +98,49 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [menuInsetTop, setMenuInsetTop] = useState(80);
-  const [mounted, setMounted] = useState(false);
 
-  const measureMenuInset = () => {
-    const siteHeader = document.getElementById("site-header");
-    const bottom =
-      siteHeader?.getBoundingClientRect().bottom ??
-      document.querySelector<HTMLElement>("[data-nav-bar]")?.getBoundingClientRect().bottom ??
-      80;
-    setMenuInsetTop(bottom);
-  };
+  // SMART SCROLL STATE
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const lastScrollY = useRef(0);
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen((open) => {
-      if (!open) {
-        measureMenuInset();
-      } else {
-        setOpenDropdown(null);
-      }
-      return !open;
-    });
-  };
-
+  // Handle Smart Scroll
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
 
+      // If mobile menu or search is open, DO NOT hide the navbar
+      if (isMobileMenuOpen || isMobileSearchOpen) {
+        setIsNavVisible(true);
+        lastScrollY.current = currentScrollY;
+        return;
+      }
+
+      // If at the absolute top, always show
+      if (currentScrollY < 50) {
+        setIsNavVisible(true);
+      } 
+      // If scrolling down past 50px, hide it
+      else if (currentScrollY > lastScrollY.current) {
+        setIsNavVisible(false);
+      } 
+      // If scrolling up, show it
+      else {
+        setIsNavVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isMobileMenuOpen, isMobileSearchOpen]);
+
+  // Auto-focus mobile search
   useEffect(() => {
     if (isMobileSearchOpen && searchInputRef.current) searchInputRef.current.focus();
   }, [isMobileSearchOpen]);
 
+  // Load Subcategories
   useEffect(() => {
     fetch("/api/subcategories?parent=t40-exclusives")
       .then((r) => r.json())
@@ -147,10 +163,10 @@ export default function Navbar() {
       });
   }, []);
 
+  // Load Brands
   useEffect(() => {
     loadBrandOptions(supabase).then((brands) => {
       if (brands.length === 0) return;
-
       setMenuItems((prev) =>
         prev.map((item) =>
           item.label === "Brands"
@@ -171,6 +187,7 @@ export default function Navbar() {
     });
   }, []);
 
+  // Live Search
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
       setSearchResults([]);
@@ -180,14 +197,8 @@ export default function Navbar() {
 
     const delaySearch = setTimeout(async () => {
       setIsSearching(true);
-
-      const { products, error } = await searchProducts(supabase, searchQuery.trim(), {
-        limit: 5,
-      });
-
-      if (!error) {
-        setSearchResults(products);
-      }
+      const { products, error } = await searchProducts(supabase, searchQuery.trim(), { limit: 5 });
+      if (!error) setSearchResults(products);
       setIsSearching(false);
     }, 300); 
 
@@ -213,44 +224,27 @@ export default function Navbar() {
     setSearchResults([]);
   };
 
+  const toggleMobileMenu = () => {
+    if (!isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      setIsMobileMenuOpen(true);
+    } else {
+      closeMobileMenu();
+    }
+  };
+
   const closeMobileMenu = () => {
+    document.body.style.overflow = '';
     setIsMobileMenuOpen(false);
     setOpenDropdown(null);
   };
 
-  useEffect(() => {
-    if (!isMobileMenuOpen) return;
+  const toggleDropdown = (label: string) => {
+    if (openDropdown === label) setOpenDropdown(null);
+    else setOpenDropdown(label);
+  };
 
-    const scrollY = window.scrollY;
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.left = "0";
-    document.body.style.right = "0";
-    document.body.style.width = "100%";
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.width = "";
-      document.body.style.overflow = "";
-      window.scrollTo(0, scrollY);
-    };
-  }, [isMobileMenuOpen]);
-
-  useLayoutEffect(() => {
-    if (!isMobileMenuOpen) return;
-
-    measureMenuInset();
-    window.addEventListener("resize", measureMenuInset);
-
-    return () => {
-      window.removeEventListener("resize", measureMenuInset);
-    };
-  }, [isMobileMenuOpen]);
-
+  // Keyboard Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -262,18 +256,7 @@ export default function Navbar() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const MOBILE_UTILITY_LINKS = [
-    { label: "About", href: "/about" },
-    { label: "Journal", href: "/blog" },
-    { label: "Contact", href: "/contact" },
-    { label: "FAQ", href: "/faq" },
-  ];
-
-  const toggleDropdown = (label: string) => {
-    if (openDropdown === label) setOpenDropdown(null);
-    else setOpenDropdown(label);
-  };
-
+  // Shared Search Results UI
   const SearchResultsDropdown = ({ isDesktop = false }) => (
     <div className={`absolute left-0 w-full bg-t40-white shadow-2xl border-t border-t40-light overflow-y-auto animate-in fade-in duration-200 z-50 ${isDesktop ? 'top-full mt-4 p-6' : 'top-full p-6 max-h-[70vh]'}`}>
       {isSearching ? (
@@ -285,10 +268,7 @@ export default function Navbar() {
         <>
           <div className={`grid gap-6 ${isDesktop ? "grid-cols-1" : "grid-cols-2 md:grid-cols-4"}`}>
             {searchResults.map((product) => {
-              const price =
-                isSaleActive(product) && product.sale_price
-                  ? product.sale_price
-                  : product.price;
+              const price = isSaleActive(product) && product.sale_price ? product.sale_price : product.price;
               return (
                 <Link
                   href={getProductHref(product)}
@@ -298,10 +278,7 @@ export default function Navbar() {
                 >
                   <div className="aspect-square bg-t40-light overflow-hidden relative rounded-sm">
                     <img
-                      src={
-                        product.images[0] ||
-                        "https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=800&auto=format&fit=crop"
-                      }
+                      src={product.images[0] || "https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=800&auto=format&fit=crop"}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
@@ -323,13 +300,12 @@ export default function Navbar() {
               );
             })}
           </div>
-          <Link
-            href={`/search?q=${encodeURIComponent(searchQuery.trim())}`}
-            onClick={closeSearch}
-            className="mt-6 block text-center text-[10px] font-bold uppercase tracking-[0.2em] font-heading text-[#d94625] hover:text-t40-black transition-colors"
+          <button
+            onClick={() => goToSearch(searchQuery)}
+            className="mt-6 block text-center w-full text-[10px] font-bold uppercase tracking-[0.2em] font-heading text-[#d94625] hover:text-t40-black transition-colors"
           >
             View all results →
-          </Link>
+          </button>
         </>
       ) : (
         <div className="text-center py-8">
@@ -343,10 +319,11 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="w-full bg-t40-white border-b border-t40-grey/10">
-        <div data-nav-bar className="relative z-[60] bg-t40-white">
-          <div className="t40-container relative">
-            <div className="flex items-center justify-between h-20">
+      <header className={`sticky top-0 z-[60] w-full bg-t40-white border-b border-t40-grey/10 transition-transform duration-300 ease-in-out ${isNavVisible ? "translate-y-0" : "-translate-y-full"}`}>
+        {/* If you add an AnnouncementBar component later, put it right here above the nav container */}
+        
+        <div className="t40-container relative">
+          <div className="flex items-center justify-between h-20">
             
             {/* MOBILE SEARCH OVERLAY */}
             {isMobileSearchOpen ? (
@@ -372,26 +349,11 @@ export default function Navbar() {
                 {/* 1. MOBILE MENU BUTTON */}
                 <div className="flex items-center lg:hidden flex-1">
                   <button
-                    type="button"
-                    aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-                    aria-expanded={isMobileMenuOpen}
                     onClick={toggleMobileMenu}
-                    className="relative z-[61] flex h-11 w-11 shrink-0 items-center justify-center -ml-2 text-t40-black"
+                    className="p-2 -ml-2 text-t40-black hover:text-t40-grey transition-colors"
+                    aria-label="Open menu"
                   >
-                    <Menu
-                      size={24}
-                      strokeWidth={1.75}
-                      className={`absolute transition-all duration-200 ${
-                        isMobileMenuOpen ? "scale-0 opacity-0 rotate-90" : "scale-100 opacity-100 rotate-0"
-                      }`}
-                    />
-                    <X
-                      size={24}
-                      strokeWidth={1.75}
-                      className={`absolute transition-all duration-200 ${
-                        isMobileMenuOpen ? "scale-100 opacity-100 rotate-0" : "scale-0 opacity-0 -rotate-90"
-                      }`}
-                    />
+                     <Menu size={24} strokeWidth={1.75} />
                   </button>
                 </div>
 
@@ -406,7 +368,7 @@ export default function Navbar() {
                     <div key={item.label} className="group relative flex items-center h-full">
                       <Link 
                         href={item.href}
-                        className={`flex items-center text-[10px] xl:text-[11px] font-bold uppercase tracking-widest py-8 transition-colors font-heading ${item.isSpecial ? 'text-[#d94625] hover:text-t40-black' : 'text-t40-black hover:text-t40-grey'}`}
+                        className={`flex items-center text-[10px] xl:text-[11px] font-bold uppercase tracking-widest py-8 transition-colors font-heading ${item.isSpecial ? "text-[#d94625] hover:text-t40-black" : "text-t40-black hover:text-t40-grey"}`}
                       >
                         {item.label}
                         {item.children && <ChevronDown size={14} className="ml-1 opacity-50 group-hover:rotate-180 transition-transform duration-300" />}
@@ -433,17 +395,11 @@ export default function Navbar() {
 
                 {/* 4. ACTIONS */}
                 <div className="flex items-center justify-end space-x-4 lg:space-x-6 flex-1 lg:flex-none">
-                  
-                  {/* Mobile Search Icon */}
                   <button onClick={() => setIsMobileSearchOpen(true)} className="lg:hidden text-t40-black">
                     <Search size={20} strokeWidth={1.5} />
                   </button>
 
-                  {/* Desktop Inline Search Bar */}
-                  <form
-                    onSubmit={handleSearchSubmit}
-                    className="hidden lg:flex relative items-center border-b border-t40-grey/30 focus-within:border-t40-black transition-colors w-48 xl:w-64 pb-1"
-                  >
+                  <form onSubmit={handleSearchSubmit} className="hidden lg:flex relative items-center border-b border-t40-grey/30 focus-within:border-t40-black transition-colors w-48 xl:w-64 pb-1">
                     <Search size={14} className="text-t40-grey mr-2 flex-shrink-0" strokeWidth={2} />
                     <input
                       type="search"
@@ -455,7 +411,6 @@ export default function Navbar() {
                     {searchQuery.trim().length >= 2 && <SearchResultsDropdown isDesktop={true} />}
                   </form>
                   
-                  {/* Cart Icon */}
                   <button 
                     onClick={() => setDrawerOpen(true)} 
                     className="relative text-t40-black hover:text-t40-grey transition-colors"
@@ -472,75 +427,72 @@ export default function Navbar() {
             )}
           </div>
         </div>
-        </div>
       </header>
 
-      {mounted &&
-        isMobileMenuOpen &&
-        !isMobileSearchOpen &&
-        createPortal(
-          <>
-            <button
-              type="button"
-              aria-label="Close menu"
-              className="lg:hidden fixed inset-0 bg-t40-black/40 z-[45] backdrop-blur-[2px]"
-              style={{ top: menuInsetTop }}
-              onClick={closeMobileMenu}
-            />
-            <div
-              className="lg:hidden fixed inset-x-0 bottom-0 z-[45] overflow-y-auto overscroll-contain bg-t40-white animate-in slide-in-from-left duration-300"
-              style={{ top: menuInsetTop }}
-            >
-              <div className="p-4 space-y-1">
-                {menuItems.map((item) => (
-                  <div key={item.label} className="border-b border-t40-light last:border-none">
-                    <div className="flex justify-between items-center">
-                      <Link
-                        href={item.href}
-                        className={`block py-4 text-xs font-bold uppercase tracking-widest font-heading ${item.isSpecial ? "text-[#d94625]" : "text-t40-black"}`}
-                        onClick={closeMobileMenu}
-                      >
-                        {item.label}
-                      </Link>
-                      {item.children && (
-                        <button
-                          type="button"
-                          onClick={() => toggleDropdown(item.label)}
-                          className="p-4 text-t40-grey"
-                          aria-expanded={openDropdown === item.label}
-                        >
-                          <ChevronDown
-                            size={16}
-                            className={`transform transition-transform duration-300 ${openDropdown === item.label ? "rotate-180" : ""}`}
-                          />
-                        </button>
-                      )}
-                    </div>
+      {/* 5. MOBILE MENU FULL-SCREEN OVERLAY */}
+      {isMobileMenuOpen && !isMobileSearchOpen && (
+        <div className="lg:hidden fixed inset-0 w-full bg-t40-white z-[100] flex flex-col animate-in slide-in-from-left duration-300">
+          
+          {/* Overlay Header */}
+          <div className="flex items-center justify-between h-20 px-4 border-b border-t40-grey/10 shrink-0">
+            <div className="flex-1"></div> {/* Spacer to keep logo centered */}
+            
+            <div className="shrink-0 w-fit flex justify-center">
+              <NavbarLogo />
+            </div>
+            
+            <div className="flex-1 flex items-center justify-end">
+              <button
+                onClick={closeMobileMenu}
+                className="p-2 -mr-2 text-t40-black hover:text-t40-grey transition-colors"
+                aria-label="Close menu"
+              >
+                <X size={24} strokeWidth={1.75} />
+              </button>
+            </div>
+          </div>
 
+          {/* Scrollable Menu Content */}
+          <div className="flex-1 overflow-y-auto px-4 pb-10">
+            <div className="flex flex-col space-y-2 mt-4">
+              {menuItems.map((item) => (
+                <div key={item.label} className="border-b border-t40-light last:border-none">
+                  <div className="flex justify-between items-center">
+                    <Link 
+                      href={item.href}
+                      className={`block py-4 text-xs font-bold uppercase tracking-widest font-heading ${item.isSpecial ? "text-[#d94625]" : "text-t40-black"}`}
+                      onClick={closeMobileMenu} 
+                    >
+                      {item.label}
+                    </Link>
                     {item.children && (
-                      <div
-                        className={`overflow-hidden transition-all duration-300 bg-t40-light/30 ${openDropdown === item.label ? "max-h-[480px] opacity-100" : "max-h-0 opacity-0"}`}
-                      >
-                        <div className="pl-4 py-2 space-y-1 mb-2">
-                          {item.children.map((child: { label: string; href: string }) => (
-                            <Link
-                              key={child.label}
-                              href={child.href}
-                              className="block py-3 text-[10px] text-t40-grey font-bold uppercase tracking-widest hover:text-t40-black transition-colors font-heading"
-                              onClick={closeMobileMenu}
-                            >
-                              {child.label}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
+                      <button onClick={() => toggleDropdown(item.label)} className="p-4 text-t40-grey">
+                        <ChevronDown size={16} className={`transform transition-transform duration-300 ${openDropdown === item.label ? "rotate-180" : ""}`} />
+                      </button>
                     )}
                   </div>
-                ))}
-              </div>
 
-              <div className="border-t border-t40-light p-6 bg-t40-light/30">
-                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-t40-grey font-heading mb-4">
+                  {item.children && (
+                    <div className={`overflow-hidden transition-all duration-300 bg-t40-light/30 ${openDropdown === item.label ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"}`}>
+                      <div className="pl-4 py-2 space-y-2 mb-2">
+                        {item.children.map((child: any) => (
+                          <Link 
+                            key={child.label} 
+                            href={child.href}
+                            className="block py-3 text-[10px] text-t40-grey font-bold uppercase tracking-widest hover:text-t40-black transition-colors font-heading"
+                            onClick={closeMobileMenu}
+                          >
+                            {child.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <div className="pt-8 mt-4 border-t border-t40-light">
+                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-t40-grey font-heading mb-4 px-2">
                   The House
                 </p>
                 <div className="grid grid-cols-2 gap-3">
@@ -548,7 +500,7 @@ export default function Navbar() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="py-3 text-[10px] font-bold uppercase tracking-widest font-heading text-t40-black hover:text-[#d94625] transition-colors border border-t40-light bg-t40-white text-center"
+                      className="py-3 text-[10px] font-bold uppercase tracking-widest font-heading text-t40-black hover:text-[#d94625] transition-colors border border-t40-light bg-t40-light/30 text-center"
                       onClick={closeMobileMenu}
                     >
                       {link.label}
@@ -557,9 +509,9 @@ export default function Navbar() {
                 </div>
               </div>
             </div>
-          </>,
-          document.body
-        )}
+          </div>
+        </div>
+      )}
 
       <CartDrawer isOpen={isDrawerOpen} setIsOpen={setDrawerOpen} />
     </>
