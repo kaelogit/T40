@@ -14,8 +14,12 @@ import {
 
 type CartProduct = Pick<
   ProductDetail,
-  "id" | "name" | "price" | "sale_price" | "on_sale" | "sale_ends_at" | "variants" | "category" | "product_type"
->;
+  "id" | "name" | "price" | "sale_price" | "on_sale" | "sale_ends_at" | "variants" | "category"
+> & {
+  product_type?: string | null;
+  in_stock?: boolean | null;
+  stock_quantity?: number | null;
+};
 
 export type CartLinePayload = {
   id: string;
