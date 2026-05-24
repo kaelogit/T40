@@ -12,7 +12,7 @@ import { buildPageMetadata, SITE_NAME } from "@/lib/site/metadata";
 export const metadata = buildPageMetadata({
   title: `${SITE_NAME} | Luxury Fragrances`,
   description:
-    "Award-winning T40 Exclusives, designer fragrances, and gift sets. Shop online with delivery across Nigeria.",
+    "Award-winning T40 Perfumes, designer fragrances, and gift sets. Shop online with delivery across Nigeria and selected countries.",
   path: "/",
   image: "/hero/sweet-noble.jpg",
 });
