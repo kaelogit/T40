@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { hasPublicSupabaseConfig } from "@/lib/supabase/config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { BlogPost } from "./types";
 import { DEFAULT_BLOG_POSTS } from "./defaults/blog";
@@ -33,6 +34,12 @@ function mapRow(row: {
 }
 
 export async function getBlogPostsSorted(publishedOnly = true): Promise<BlogPost[]> {
+  if (!hasPublicSupabaseConfig()) {
+    return publishedOnly
+      ? DEFAULT_BLOG_POSTS.filter((p) => p.published !== false)
+      : DEFAULT_BLOG_POSTS;
+  }
+
   const supabase = await createClient();
   let query = supabase
     .from("blog_posts")
@@ -53,13 +60,18 @@ export async function getBlogPostsSorted(publishedOnly = true): Promise<BlogPost
 }
 
 export async function getBlogPost(slug: string): Promise<BlogPost | null> {
+  const fallback = DEFAULT_BLOG_POSTS.find((p) => p.slug === slug) ?? null;
+
+  if (!hasPublicSupabaseConfig()) {
+    return fallback;
+  }
+
   const supabase = await createClient();
   const { data } = await supabase.from("blog_posts").select("*").eq("slug", slug).maybeSingle();
 
   if (data) return mapRow(data);
 
-  const fallback = DEFAULT_BLOG_POSTS.find((p) => p.slug === slug);
-  return fallback ?? null;
+  return fallback;
 }
 
 export async function getBlogPostsAdmin(): Promise<BlogPost[]> {
