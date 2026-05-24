@@ -3,7 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { Search, ShoppingBag, Menu, X, ChevronDown, Loader2 } from "lucide-react";
 
 import { useCart } from "@/context/CartContext"; 
@@ -93,24 +94,32 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const navBarRef = useRef<HTMLDivElement>(null);
-  const [mobileMenuTop, setMobileMenuTop] = useState(80);
+  const [menuInsetTop, setMenuInsetTop] = useState(80);
+  const [mounted, setMounted] = useState(false);
 
-  const updateMobileMenuTop = () => {
-    if (navBarRef.current) {
-      setMobileMenuTop(navBarRef.current.getBoundingClientRect().bottom);
-    }
+  const measureMenuInset = () => {
+    const siteHeader = document.getElementById("site-header");
+    const bottom =
+      siteHeader?.getBoundingClientRect().bottom ??
+      document.querySelector<HTMLElement>("[data-nav-bar]")?.getBoundingClientRect().bottom ??
+      80;
+    setMenuInsetTop(bottom);
   };
 
   const toggleMobileMenu = () => {
-    if (!isMobileMenuOpen) {
-      updateMobileMenuTop();
-    }
-    setIsMobileMenuOpen((open) => !open);
-    if (isMobileMenuOpen) {
-      setOpenDropdown(null);
-    }
+    setIsMobileMenuOpen((open) => {
+      if (!open) {
+        measureMenuInset();
+      } else {
+        setOpenDropdown(null);
+      }
+      return !open;
+    });
   };
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isMobileSearchOpen && searchInputRef.current) searchInputRef.current.focus();
@@ -210,32 +219,35 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (!isMobileMenuOpen) return;
+
+    const scrollY = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+
     return () => {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
       document.body.style.overflow = "";
+      window.scrollTo(0, scrollY);
     };
   }, [isMobileMenuOpen]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isMobileMenuOpen) return;
 
-    const updateTop = () => {
-      if (navBarRef.current) {
-        setMobileMenuTop(navBarRef.current.getBoundingClientRect().bottom);
-      }
-    };
-
-    updateTop();
-    window.addEventListener("scroll", updateTop, { passive: true });
-    window.addEventListener("resize", updateTop);
+    measureMenuInset();
+    window.addEventListener("resize", measureMenuInset);
 
     return () => {
-      window.removeEventListener("scroll", updateTop);
-      window.removeEventListener("resize", updateTop);
+      window.removeEventListener("resize", measureMenuInset);
     };
   }, [isMobileMenuOpen]);
 
@@ -331,8 +343,8 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-t40-white border-b border-t40-grey/10 transition-all duration-300">
-        <div ref={navBarRef} className="relative z-[60] bg-t40-white">
+      <header className="w-full bg-t40-white border-b border-t40-grey/10">
+        <div data-nav-bar className="relative z-[60] bg-t40-white">
           <div className="t40-container relative">
             <div className="flex items-center justify-between h-20">
             
@@ -463,90 +475,91 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* MOBILE MENU — rendered outside header so position measurement stays correct */}
-      {isMobileMenuOpen && !isMobileSearchOpen && (
-        <>
-          <button
-            type="button"
-            aria-label="Close menu"
-            className="lg:hidden fixed inset-x-0 bottom-0 bg-t40-black/40 z-40 backdrop-blur-[2px]"
-            style={{ top: mobileMenuTop }}
-            onClick={closeMobileMenu}
-          />
-          <div
-            className="lg:hidden fixed left-0 right-0 bottom-0 bg-t40-white z-40 overflow-y-auto animate-in slide-in-from-left duration-300"
-            style={{ top: mobileMenuTop }}
-          >
-            <div className="flex flex-col min-h-full">
-              <div className="flex-1 p-4 space-y-1">
-                  {menuItems.map((item) => (
-                    <div key={item.label} className="border-b border-t40-light last:border-none">
-                      <div className="flex justify-between items-center">
-                        <Link
-                          href={item.href}
-                          className={`block py-4 text-xs font-bold uppercase tracking-widest font-heading ${item.isSpecial ? "text-[#d94625]" : "text-t40-black"}`}
-                          onClick={closeMobileMenu}
-                        >
-                          {item.label}
-                        </Link>
-                        {item.children && (
-                          <button
-                            type="button"
-                            onClick={() => toggleDropdown(item.label)}
-                            className="p-4 text-t40-grey"
-                            aria-expanded={openDropdown === item.label}
-                          >
-                            <ChevronDown
-                              size={16}
-                              className={`transform transition-transform duration-300 ${openDropdown === item.label ? "rotate-180" : ""}`}
-                            />
-                          </button>
-                        )}
-                      </div>
-
-                      {item.children && (
-                        <div
-                          className={`overflow-hidden transition-all duration-300 bg-t40-light/30 ${openDropdown === item.label ? "max-h-[480px] opacity-100" : "max-h-0 opacity-0"}`}
-                        >
-                          <div className="pl-4 py-2 space-y-1 mb-2">
-                            {item.children.map((child: { label: string; href: string }) => (
-                              <Link
-                                key={child.label}
-                                href={child.href}
-                                className="block py-3 text-[10px] text-t40-grey font-bold uppercase tracking-widest hover:text-t40-black transition-colors font-heading"
-                                onClick={closeMobileMenu}
-                              >
-                                {child.label}
-                              </Link>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="border-t border-t40-light p-6 bg-t40-light/30 mt-auto">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-t40-grey font-heading mb-4">
-                    The House
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {MOBILE_UTILITY_LINKS.map((link) => (
+      {mounted &&
+        isMobileMenuOpen &&
+        !isMobileSearchOpen &&
+        createPortal(
+          <>
+            <button
+              type="button"
+              aria-label="Close menu"
+              className="lg:hidden fixed inset-0 bg-t40-black/40 z-[45] backdrop-blur-[2px]"
+              style={{ top: menuInsetTop }}
+              onClick={closeMobileMenu}
+            />
+            <div
+              className="lg:hidden fixed inset-x-0 bottom-0 z-[45] overflow-y-auto overscroll-contain bg-t40-white animate-in slide-in-from-left duration-300"
+              style={{ top: menuInsetTop }}
+            >
+              <div className="p-4 space-y-1">
+                {menuItems.map((item) => (
+                  <div key={item.label} className="border-b border-t40-light last:border-none">
+                    <div className="flex justify-between items-center">
                       <Link
-                        key={link.href}
-                        href={link.href}
-                        className="py-3 text-[10px] font-bold uppercase tracking-widest font-heading text-t40-black hover:text-[#d94625] transition-colors border border-t40-light bg-t40-white text-center"
+                        href={item.href}
+                        className={`block py-4 text-xs font-bold uppercase tracking-widest font-heading ${item.isSpecial ? "text-[#d94625]" : "text-t40-black"}`}
                         onClick={closeMobileMenu}
                       >
-                        {link.label}
+                        {item.label}
                       </Link>
-                    ))}
+                      {item.children && (
+                        <button
+                          type="button"
+                          onClick={() => toggleDropdown(item.label)}
+                          className="p-4 text-t40-grey"
+                          aria-expanded={openDropdown === item.label}
+                        >
+                          <ChevronDown
+                            size={16}
+                            className={`transform transition-transform duration-300 ${openDropdown === item.label ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                      )}
+                    </div>
+
+                    {item.children && (
+                      <div
+                        className={`overflow-hidden transition-all duration-300 bg-t40-light/30 ${openDropdown === item.label ? "max-h-[480px] opacity-100" : "max-h-0 opacity-0"}`}
+                      >
+                        <div className="pl-4 py-2 space-y-1 mb-2">
+                          {item.children.map((child: { label: string; href: string }) => (
+                            <Link
+                              key={child.label}
+                              href={child.href}
+                              className="block py-3 text-[10px] text-t40-grey font-bold uppercase tracking-widest hover:text-t40-black transition-colors font-heading"
+                              onClick={closeMobileMenu}
+                            >
+                              {child.label}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
+                ))}
+              </div>
+
+              <div className="border-t border-t40-light p-6 bg-t40-light/30">
+                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-t40-grey font-heading mb-4">
+                  The House
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {MOBILE_UTILITY_LINKS.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="py-3 text-[10px] font-bold uppercase tracking-widest font-heading text-t40-black hover:text-[#d94625] transition-colors border border-t40-light bg-t40-white text-center"
+                      onClick={closeMobileMenu}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
                 </div>
               </div>
             </div>
-        </>
-      )}
+          </>,
+          document.body
+        )}
 
       <CartDrawer isOpen={isDrawerOpen} setIsOpen={setDrawerOpen} />
     </>
