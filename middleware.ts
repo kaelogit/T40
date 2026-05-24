@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
+import { hasPublicSupabaseConfig, resolvePublicSupabaseConfig } from "@/lib/supabase/config";
 
 const ADMIN_HOSTS = (process.env.ADMIN_HOSTS ?? "admin.t40perfumesng.com,admin.localhost:3000")
   .split(",")
@@ -21,26 +22,29 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
+  if (hasPublicSupabaseConfig()) {
+    try {
+      const { url, anonKey } = resolvePublicSupabaseConfig();
+      const supabase = createServerClient<Database>(url, anonKey, {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            response = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            );
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+      });
 
-  await supabase.auth.getUser();
+      await supabase.auth.getUser();
+    } catch {
+      // Keep the site reachable if Supabase is misconfigured or unreachable.
+    }
+  }
 
   // Subdomain: admin.t40perfumesng.com → /admin/*
   if (adminHost) {

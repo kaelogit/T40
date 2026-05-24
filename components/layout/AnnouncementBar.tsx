@@ -35,7 +35,7 @@ export default function AnnouncementBar({ data }: { data: AnnouncementContent })
   if (!visible) return null;
 
   return (
-    <div className="relative z-[60] bg-t40-black text-t40-white border-b border-t40-white/10">
+    <div className="relative bg-t40-black text-t40-white border-b border-t40-white/10">
       <div className="t40-container px-4 md:px-8 py-3 flex items-center gap-3 md:gap-6">
         <Award size={16} className="text-[#d94625] shrink-0 hidden sm:block" />
 

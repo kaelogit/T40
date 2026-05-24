@@ -36,7 +36,7 @@ function NavbarLogo() {
           width={200}
           height={68}
           priority
-          className="block h-10 w-auto lg:h-12 object-contain"
+          className="block h-11 w-auto lg:h-12 object-contain"
           style={{ width: "auto" }}
           onError={() => setLogoError(true)}
         />
@@ -93,6 +93,8 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const [mobileMenuTop, setMobileMenuTop] = useState(80);
 
   useEffect(() => {
     if (isMobileSearchOpen && searchInputRef.current) searchInputRef.current.focus();
@@ -171,7 +173,7 @@ export default function Navbar() {
     const trimmed = query.trim();
     if (!trimmed) return;
     closeSearch();
-    setIsMobileMenuOpen(false);
+    closeMobileMenu();
     router.push(`/search?q=${encodeURIComponent(trimmed)}`);
   };
 
@@ -186,6 +188,11 @@ export default function Navbar() {
     setSearchResults([]);
   };
 
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+    setOpenDropdown(null);
+  };
+
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = "hidden";
@@ -198,9 +205,28 @@ export default function Navbar() {
   }, [isMobileMenuOpen]);
 
   useEffect(() => {
+    if (!isMobileMenuOpen) return;
+
+    const updateMobileMenuTop = () => {
+      if (headerRef.current) {
+        setMobileMenuTop(headerRef.current.getBoundingClientRect().bottom);
+      }
+    };
+
+    updateMobileMenuTop();
+    window.addEventListener("scroll", updateMobileMenuTop, { passive: true });
+    window.addEventListener("resize", updateMobileMenuTop);
+
+    return () => {
+      window.removeEventListener("scroll", updateMobileMenuTop);
+      window.removeEventListener("resize", updateMobileMenuTop);
+    };
+  }, [isMobileMenuOpen]);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setIsMobileMenuOpen(false);
+        closeMobileMenu();
         closeSearch();
       }
     };
@@ -289,7 +315,10 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-t40-white border-b border-t40-grey/10 transition-all duration-300">
+      <header
+        ref={headerRef}
+        className={`sticky top-0 w-full bg-t40-white border-b border-t40-grey/10 transition-all duration-300 ${isMobileMenuOpen ? "z-[70]" : "z-50"}`}
+      >
         <div className="t40-container relative">
           <div className="flex items-center justify-between h-20">
             
@@ -316,8 +345,14 @@ export default function Navbar() {
               <>
                 {/* 1. MOBILE MENU BUTTON */}
                 <div className="flex items-center lg:hidden flex-1">
-                  <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 -ml-2 text-t40-black">
-                    {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                  <button
+                    type="button"
+                    aria-label="Open menu"
+                    aria-expanded={isMobileMenuOpen}
+                    onClick={() => setIsMobileMenuOpen(true)}
+                    className="relative z-[61] flex h-11 w-11 shrink-0 items-center justify-center -ml-2 text-t40-black"
+                  >
+                    <Menu size={24} strokeWidth={1.5} />
                   </button>
                 </div>
 
@@ -405,11 +440,28 @@ export default function Navbar() {
             <button
               type="button"
               aria-label="Close menu"
-              className="lg:hidden fixed inset-0 top-20 bg-t40-black/40 z-40 backdrop-blur-[2px]"
-              onClick={() => setIsMobileMenuOpen(false)}
+              className="lg:hidden fixed inset-x-0 bottom-0 bg-t40-black/40 z-[60] backdrop-blur-[2px]"
+              style={{ top: mobileMenuTop }}
+              onClick={closeMobileMenu}
             />
-            <div className="lg:hidden fixed top-20 left-0 right-0 bottom-0 bg-t40-white z-50 overflow-y-auto animate-in slide-in-from-left duration-300">
+            <div
+              className="lg:hidden fixed left-0 right-0 bottom-0 bg-t40-white z-[70] overflow-y-auto animate-in slide-in-from-left duration-300"
+              style={{ top: mobileMenuTop }}
+            >
               <div className="flex flex-col min-h-full">
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-t40-light bg-t40-white px-4">
+                  <span className="text-xs font-bold uppercase tracking-widest font-heading text-t40-black">
+                    Menu
+                  </span>
+                  <button
+                    type="button"
+                    onClick={closeMobileMenu}
+                    className="flex h-10 w-10 items-center justify-center text-t40-black"
+                    aria-label="Close menu"
+                  >
+                    <X size={22} strokeWidth={2} />
+                  </button>
+                </div>
                 <div className="flex-1 p-4 space-y-1">
                   {menuItems.map((item) => (
                     <div key={item.label} className="border-b border-t40-light last:border-none">
@@ -417,7 +469,7 @@ export default function Navbar() {
                         <Link
                           href={item.href}
                           className={`block py-4 text-xs font-bold uppercase tracking-widest font-heading ${item.isSpecial ? "text-[#d94625]" : "text-t40-black"}`}
-                          onClick={() => setIsMobileMenuOpen(false)}
+                          onClick={closeMobileMenu}
                         >
                           {item.label}
                         </Link>
@@ -446,7 +498,7 @@ export default function Navbar() {
                                 key={child.label}
                                 href={child.href}
                                 className="block py-3 text-[10px] text-t40-grey font-bold uppercase tracking-widest hover:text-t40-black transition-colors font-heading"
-                                onClick={() => setIsMobileMenuOpen(false)}
+                                onClick={closeMobileMenu}
                               >
                                 {child.label}
                               </Link>
@@ -468,7 +520,7 @@ export default function Navbar() {
                         key={link.href}
                         href={link.href}
                         className="py-3 text-[10px] font-bold uppercase tracking-widest font-heading text-t40-black hover:text-[#d94625] transition-colors border border-t40-light bg-t40-white text-center"
-                        onClick={() => setIsMobileMenuOpen(false)}
+                        onClick={closeMobileMenu}
                       >
                         {link.label}
                       </Link>
