@@ -15,6 +15,11 @@ export const DEFAULT_FAQ_CATEGORIES: FaqCategory[] = [
           "We ship within Nigeria and to selected international destinations. At checkout, choose Nigeria for Paystack or Other countries for Stripe. Contact us if you need help with your country.",
       },
       {
+        question: "How much does shipping cost?",
+        answer:
+          "Shipping is not charged at checkout. After your order is confirmed, we will contact you to discuss delivery options and agree the shipping fee based on your location and order size.",
+      },
+      {
         question: "Can I change my delivery address after ordering?",
         answer:
           "If your order has not shipped yet, reach out via our contact page with your order number and the corrected address. Once dispatched, we cannot redirect packages.",

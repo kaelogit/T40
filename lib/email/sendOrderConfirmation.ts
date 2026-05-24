@@ -24,9 +24,19 @@ type ItemRow = {
   size: string | null;
   quantity: number;
   unit_price: number;
+  compare_at_price?: number | null;
   line_total: number;
   bundle_details?: unknown;
 };
+
+function formatLineUnitPrice(item: ItemRow): string {
+  const unit = Number(item.unit_price);
+  const compare = item.compare_at_price != null ? Number(item.compare_at_price) : null;
+  if (compare != null && compare > unit) {
+    return `<span style="text-decoration:line-through;color:#999;margin-right:6px;">${formatPrice(compare)}</span><span style="color:#d94625;font-weight:bold;">${formatPrice(unit)}</span>`;
+  }
+  return formatPrice(unit);
+}
 
 function giftSetEmailBlock(bundle: ReturnType<typeof parseBundleDetails>): string {
   if (!bundle?.includes?.length) return "";
@@ -47,14 +57,25 @@ function buildOrderEmailHtml(order: OrderRow, items: ItemRow[], shopUrl: string)
       const bundle = parseBundleDetails(item.bundle_details);
       const sizeLabel =
         item.size && !isGiftSetLine(item.size) ? ` · ${item.size}` : isGiftSetLine(item.size) ? " · Gift set" : "";
+      const unitLabel = formatLineUnitPrice(item);
+      const lineCompare =
+        item.compare_at_price != null &&
+        Number(item.compare_at_price) > Number(item.unit_price)
+          ? `<span style="text-decoration:line-through;color:#999;font-size:12px;display:block;">${formatPrice(Number(item.compare_at_price) * item.quantity)}</span>`
+          : "";
+      const linePriceColor =
+        item.compare_at_price != null &&
+        Number(item.compare_at_price) > Number(item.unit_price)
+          ? "color:#d94625;"
+          : "color:#111;";
       return `
       <tr>
         <td style="padding:12px 0;border-bottom:1px solid #eee;font-family:sans-serif;font-size:14px;color:#111;">
-          ${item.product_name}${sizeLabel} × ${item.quantity} @ ${formatPrice(Number(item.unit_price))}
+          ${item.product_name}${sizeLabel} × ${item.quantity} @ ${unitLabel}
           ${giftSetEmailBlock(bundle)}
         </td>
-        <td style="padding:12px 0;border-bottom:1px solid #eee;font-family:sans-serif;font-size:14px;color:#111;text-align:right;vertical-align:top;">
-          ${formatPrice(Number(item.line_total))}
+        <td style="padding:12px 0;border-bottom:1px solid #eee;font-family:sans-serif;font-size:14px;text-align:right;vertical-align:top;${linePriceColor}font-weight:bold;">
+          ${lineCompare}${formatPrice(Number(item.line_total))}
         </td>
       </tr>`;
     })
@@ -163,7 +184,7 @@ export async function sendOrderConfirmationEmail(orderId: string): Promise<{
 
   const { data: items } = await supabase
     .from("order_items")
-    .select("product_name, size, quantity, unit_price, line_total, bundle_details")
+    .select("product_name, size, quantity, unit_price, compare_at_price, line_total, bundle_details")
     .eq("order_id", orderId);
 
   const shopUrl = `${getSiteUrl()}/shop`;

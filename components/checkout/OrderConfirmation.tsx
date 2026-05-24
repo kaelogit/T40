@@ -7,6 +7,7 @@ import { CheckCircle, Loader2 } from "lucide-react";
 import { formatPrice } from "@/lib/products/pricing";
 import { Button } from "@/components/ui/Button";
 import GiftSetLineDetails from "@/components/product/GiftSetLineDetails";
+import LinePrice from "@/components/ui/LinePrice";
 import { parseBundleDetails, isGiftSetLine } from "@/lib/orders/bundleDetails";
 
 type OrderInfo = {
@@ -23,6 +24,7 @@ type OrderLine = {
   size: string | null;
   quantity: number;
   unit_price: number;
+  compare_at_price?: number | null;
   line_total: number;
   bundle_details?: unknown;
 };
@@ -156,13 +158,16 @@ export default function OrderConfirmation({ checkoutIntentId }: { checkoutIntent
                           partial={bundle?.partial}
                         />
                       )}
-                      <p className="text-[10px] text-t40-grey mt-1">
-                        Qty {item.quantity} · {formatPrice(Number(item.unit_price))} each
-                      </p>
+                      <p className="text-[10px] text-t40-grey mt-1">Qty {item.quantity}</p>
                     </div>
-                    <p className="text-sm font-bold text-t40-black shrink-0">
-                      {formatPrice(Number(item.line_total))}
-                    </p>
+                    <LinePrice
+                      price={Number(item.unit_price)}
+                      compareAt={
+                        item.compare_at_price != null ? Number(item.compare_at_price) : undefined
+                      }
+                      quantity={item.quantity}
+                      showEach={false}
+                    />
                   </li>
                 );
               })}

@@ -5,6 +5,7 @@ import type { CartItem } from "@/context/CartContext";
 import { formatPrice } from "@/lib/products/pricing";
 import GiftSetLineDetails from "@/components/product/GiftSetLineDetails";
 import { isGiftSetLine } from "@/lib/orders/bundleDetails";
+import LinePrice from "@/components/ui/LinePrice";
 
 type Props = {
   items: CartItem[];
@@ -58,9 +59,12 @@ export default function OrderSummary({
               )}
               <p className="text-[10px] text-t40-grey mt-1">Qty {item.quantity}</p>
             </div>
-            <p className="text-xs font-bold text-t40-black shrink-0">
-              {formatPrice(item.price * item.quantity)}
-            </p>
+            <LinePrice
+              price={item.price}
+              compareAt={item.compareAtPrice}
+              quantity={item.quantity}
+              showEach={false}
+            />
           </li>
         ))}
       </ul>
@@ -82,6 +86,10 @@ export default function OrderSummary({
           </span>
           <span className="text-lg font-black text-t40-black">{formatPrice(total)}</span>
         </div>
+        <p className="text-[10px] text-t40-grey font-body leading-relaxed pt-3">
+          Shipping is not included. We will contact you after checkout to discuss delivery and agree
+          shipping fees.
+        </p>
       </div>
     </div>
   );

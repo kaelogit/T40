@@ -247,6 +247,7 @@ export type Database = {
           size: string | null;
           quantity: number;
           unit_price: number;
+          compare_at_price: number | null;
           line_total: number;
           created_at: string;
           bundle_details: Json | null;
@@ -262,6 +263,7 @@ export type Database = {
           size?: string | null;
           quantity: number;
           unit_price: number;
+          compare_at_price?: number | null;
           line_total: number;
           created_at?: string;
           bundle_details?: Json | null;

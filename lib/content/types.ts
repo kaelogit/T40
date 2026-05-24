@@ -143,11 +143,11 @@ export const DEFAULT_CONTACT_CONTENT: ContactContent = {
   },
   sidebar: {
     eyebrow: "Direct lines",
-    email: { label: "Email", address: "hello@t40perfumes.com" },
+    email: { label: "Email", address: "hello@t40perfumesng.com" },
     whatsapp: {
       label: "WhatsApp",
-      display: "+234 800 000 0000",
-      href: "https://wa.me/2348000000000",
+      display: "+447930252011",
+      href: "https://wa.me/447930252011",
     },
     studio: {
       label: "Studio",

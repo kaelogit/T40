@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Loader2, PackageCheck } from "lucide-react";
 import { formatPrice } from "@/lib/products/pricing";
+import LinePrice from "@/components/ui/LinePrice";
 
 type OrderItem = {
   id: string;
@@ -12,6 +13,7 @@ type OrderItem = {
   size: string | null;
   quantity: number;
   unit_price: number;
+  compare_at_price?: number | null;
   line_total: number;
   bundle_details?: { includes?: string[] } | null;
 };
@@ -121,15 +123,19 @@ export default function OrderDetailPage() {
           const includes = item.bundle_details?.includes;
           return (
             <li key={item.id} className="p-4 text-sm">
-              <div className="flex justify-between gap-4">
+              <div className="flex justify-between gap-4 items-start">
                 <span>
                   {item.product_name}
-                  {item.size ? ` · ${item.size}` : ""} × {item.quantity} @{" "}
-                  {formatPrice(Number(item.unit_price))}
+                  {item.size ? ` · ${item.size}` : ""} × {item.quantity}
                 </span>
-                <span className="font-bold shrink-0">
-                  {formatPrice(Number(item.line_total))}
-                </span>
+                <LinePrice
+                  price={Number(item.unit_price)}
+                  compareAt={
+                    item.compare_at_price != null ? Number(item.compare_at_price) : undefined
+                  }
+                  quantity={item.quantity}
+                  showEach={false}
+                />
               </div>
               {includes && includes.length > 0 && (
                 <p className="text-xs text-neutral-500 mt-1">

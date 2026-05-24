@@ -48,8 +48,10 @@ export default function BestSellers() {
   };
 
   if (!isLoading && products.length === 0) {
-    return null; 
+    return null;
   }
+
+  const useCarousel = products.length >= 4;
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -97,46 +99,61 @@ export default function BestSellers() {
           </div>
         ) : (
           <div className="relative">
-            
-            {/* DESKTOP NAVIGATION ARROWS (Hidden on mobile, appear on hover on desktop) */}
-            <button 
-              onClick={() => scroll("left")}
-              className="hidden lg:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-t40-white border border-t40-light rounded-full items-center justify-center text-t40-black shadow-lg opacity-0 group-hover:opacity-100 hover:bg-t40-black hover:text-t40-white hover:scale-110 transition-all duration-300"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button 
-              onClick={() => scroll("right")}
-              className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-t40-white border border-t40-light rounded-full items-center justify-center text-t40-black shadow-lg opacity-0 group-hover:opacity-100 hover:bg-t40-black hover:text-t40-white hover:scale-110 transition-all duration-300"
-            >
-              <ChevronRight size={20} />
-            </button>
+            {useCarousel && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => scroll("left")}
+                  className="hidden lg:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-t40-white border border-t40-light rounded-full items-center justify-center text-t40-black shadow-lg opacity-0 group-hover:opacity-100 hover:bg-t40-black hover:text-t40-white hover:scale-110 transition-all duration-300"
+                  aria-label="Scroll best sellers left"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scroll("right")}
+                  className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-t40-white border border-t40-light rounded-full items-center justify-center text-t40-black shadow-lg opacity-0 group-hover:opacity-100 hover:bg-t40-black hover:text-t40-white hover:scale-110 transition-all duration-300"
+                  aria-label="Scroll best sellers right"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </>
+            )}
 
-            {/* PRODUCT SWIPE TRACK */}
-            <motion.div 
-              ref={scrollRef}
+            <motion.div
+              ref={useCarousel ? scrollRef : undefined}
               variants={containerVariants}
               initial="hidden"
               whileInView="show"
               viewport={{ once: true, margin: "-100px" }}
-              // Hide scrollbars while keeping functionality
-              className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 pt-4 px-2 -mx-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              className={
+                useCarousel
+                  ? "flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 pt-4 px-2 -mx-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                  : `grid gap-6 justify-items-center mx-auto pb-8 pt-4 px-2 ${
+                      products.length === 1
+                        ? "grid-cols-1 max-w-sm"
+                        : products.length === 2
+                          ? "grid-cols-1 sm:grid-cols-2 max-w-2xl"
+                          : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl"
+                    }`
+              }
             >
               {products.map((product) => (
-                <motion.div 
-                  key={product.id} 
+                <motion.div
+                  key={product.id}
                   variants={cardVariants}
-                  // Sizing magic: 85% width on mobile (peek effect), ~30% on tablet, exactly 23% on large screens
-                  className="flex-shrink-0 w-[85vw] sm:w-[45vw] lg:w-[30vw] xl:w-[23%] snap-start"
+                  className={
+                    useCarousel
+                      ? "flex-shrink-0 w-[85vw] sm:w-[45vw] lg:w-[30vw] xl:w-[23%] snap-start"
+                      : "w-full max-w-[320px]"
+                  }
                 >
                   <ProductCard product={product} />
                 </motion.div>
               ))}
-              
-              {/* Optional Empty Space at the end for mobile breathing room */}
-              <div className="flex-shrink-0 w-[4vw] lg:w-0" />
-            </motion.div>
 
+              {useCarousel && <div className="flex-shrink-0 w-[4vw] lg:w-0" />}
+            </motion.div>
           </div>
         )}
 

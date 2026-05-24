@@ -6,6 +6,7 @@ import { computeGiftSetAvailability } from "@/lib/products/giftSetAvailability";
 import {
   lineDisplayName,
   parseLegacyCartLineId,
+  variantCompareAtPrice,
   variantEffectivePrice,
 } from "@/lib/products/variants";
 import {
@@ -111,10 +112,9 @@ export async function validateAndPriceItems(items: CheckoutCartItem[]) {
       );
     }
 
-    const unitPrice = variantEffectivePrice(
-      variant,
-      isSaleActive(product)
-    );
+    const onSale = isSaleActive(product);
+    const unitPrice = variantEffectivePrice(variant, onSale);
+    const compareAt = variantCompareAtPrice(variant, onSale, unitPrice);
 
     const lineTotal = unitPrice * item.quantity;
     subtotal += lineTotal;
@@ -125,6 +125,7 @@ export async function validateAndPriceItems(items: CheckoutCartItem[]) {
       productId: product.id,
       name: lineName,
       price: unitPrice,
+      compareAtPrice: compareAt ?? undefined,
       image: product.images?.[0] ?? item.image,
       quantity: item.quantity,
       size: isGiftSet ? "Gift set" : variant.label.trim() || undefined,
@@ -205,6 +206,7 @@ export async function createOrderRecord(
       size: item.size ?? null,
       quantity: item.quantity,
       unit_price: item.price,
+      compare_at_price: item.compareAtPrice ?? null,
       line_total: item.price * item.quantity,
       bundle_details: bundleDetails,
     };

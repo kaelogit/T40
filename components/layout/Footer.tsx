@@ -196,7 +196,7 @@ export default function Footer() {
               Shipping
             </Link>
             <a
-              href="mailto:hello@t40perfumes.com"
+              href="mailto:hello@t40perfumesng.com"
               className="text-[9px] font-bold uppercase tracking-widest font-heading text-t40-white/35 hover:text-[#d94625] transition-colors"
             >
               hello@t40perfumesng.com

@@ -23,10 +23,10 @@ export default function CareersPage() {
           If you would like to introduce yourself for future opportunities — retail,
           creative, operations, or partnerships — send a short note and your CV to{" "}
           <a
-            href="mailto:hello@t40perfumes.com"
+            href="mailto:hello@t40perfumesng.com"
             className="text-t40-black underline underline-offset-2 hover:text-[#d94625]"
           >
-            hello@t40perfumes.com
+            hello@t40perfumesng.com
           </a>
           .
         </p>

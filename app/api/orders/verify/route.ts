@@ -20,7 +20,7 @@ async function fetchOrderWithItems(supabase: ReturnType<typeof createAdminClient
 
   const { data: items } = await supabase
     .from("order_items")
-    .select("product_name, size, quantity, unit_price, line_total, bundle_details")
+    .select("product_name, size, quantity, unit_price, compare_at_price, line_total, bundle_details")
     .eq("order_id", orderId)
     .order("created_at", { ascending: true });
 

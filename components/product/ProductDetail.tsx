@@ -148,6 +148,8 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
             productId: product.id,
             name: isGiftSet ? product.name : lineDisplayName(product.name, selectedVariant.label),
             price: displayPrice,
+            compareAtPrice:
+              displayCompare && displayCompare > displayPrice ? displayCompare : undefined,
             size: isGiftSet ? "Gift set" : selectedVariant.label.trim() || undefined,
           }
         : buildCartLinePayload(product, { isGiftSet });

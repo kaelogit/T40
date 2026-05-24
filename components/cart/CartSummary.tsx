@@ -45,6 +45,10 @@ export default function CartSummary({
             {formatPrice(subtotal)}
           </span>
         </div>
+        <p className="mt-3 text-[10px] text-t40-grey font-body leading-relaxed">
+          Shipping is not included. We will contact you after checkout to discuss delivery and agree
+          shipping fees.
+        </p>
       </div>
 
       <div className="space-y-3">

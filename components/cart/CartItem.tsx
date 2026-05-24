@@ -5,9 +5,9 @@ import Link from "next/link";
 import { Minus, Plus, X } from "lucide-react";
 import type { CartItem as CartLine } from "@/context/CartContext";
 import { getProductHref } from "@/lib/products/urls";
-import { formatPrice } from "@/lib/products/pricing";
 import GiftSetLineDetails from "@/components/product/GiftSetLineDetails";
 import { isGiftSetLine } from "@/lib/orders/bundleDetails";
+import LinePrice from "@/components/ui/LinePrice";
 
 type Props = {
   item: CartLine;
@@ -24,7 +24,6 @@ export default function CartItem({
 }: Props) {
   const productId = item.id.split("::")[0];
   const productHref = getProductHref({ id: productId, slug: null });
-  const lineTotal = item.price * item.quantity;
 
   return (
     <article
@@ -103,14 +102,11 @@ export default function CartItem({
               <Plus size={14} />
             </button>
           </div>
-          <div className="text-right">
-            <p className="font-bold text-sm text-t40-black">{formatPrice(lineTotal)}</p>
-            {item.quantity > 1 && (
-              <p className="text-[10px] text-t40-grey font-heading mt-0.5">
-                {formatPrice(item.price)} each
-              </p>
-            )}
-          </div>
+          <LinePrice
+            price={item.price}
+            compareAt={item.compareAtPrice}
+            quantity={item.quantity}
+          />
         </div>
       </div>
     </article>

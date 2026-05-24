@@ -67,14 +67,14 @@ export default function GuestForm({ value, onChange }: Props) {
 
       <div>
         <label className={labelClass} htmlFor="phone">
-          Phone (WhatsApp preferred)
+          Phone
         </label>
         <input
           id="phone"
           type="tel"
           required
           autoComplete="tel"
-          placeholder="+234..."
+          placeholder="Enter your phone number"
           value={value.phone}
           onChange={(e) => set("phone", e.target.value)}
           className={inputClass}

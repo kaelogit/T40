@@ -122,16 +122,23 @@ export default function Hero() {
               alt={current.title}
               fill
               priority
+              unoptimized
               className="object-cover"
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
-            <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-transparent via-black/20 to-black/75" />
-            <div className="absolute inset-x-0 bottom-0 h-1/5 lg:hidden bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+            <div
+              className={`absolute inset-0 hidden lg:block pointer-events-none ${
+                imageFirst
+                  ? "bg-gradient-to-r from-transparent via-black/20 to-black"
+                  : "bg-gradient-to-l from-transparent via-black/20 to-black"
+              }`}
+            />
+            <div className="absolute inset-x-0 bottom-0 h-[38%] sm:h-[34%] lg:hidden bg-gradient-to-t from-black via-black/55 to-transparent pointer-events-none" />
           </div>
 
           <div
-            className={`relative flex flex-col justify-center px-6 pb-28 pt-8 lg:px-16 lg:py-12 lg:pb-12 bg-black order-2 ${
-              imageFirst ? "lg:order-2" : "lg:order-1"
+            className={`relative flex flex-col justify-center px-6 pb-28 pt-6 lg:px-16 lg:py-12 lg:pb-12 bg-black order-2 -mt-px ${
+              imageFirst ? "lg:order-2 lg:mt-0" : "lg:order-1 lg:mt-0"
             }`}
           >
             <motion.div

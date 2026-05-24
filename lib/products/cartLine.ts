@@ -8,6 +8,7 @@ import {
   getDefaultVariant,
   lineDisplayName,
   variantEffectivePrice,
+  variantCompareAtPrice,
   variantInStock,
 } from "./variants";
 
@@ -22,6 +23,7 @@ export type CartLinePayload = {
   productId: string;
   name: string;
   price: number;
+  compareAtPrice?: number;
   size?: string;
 };
 
@@ -39,12 +41,15 @@ export function buildCartLinePayload(
     : null;
 
   if (variant) {
+    const price = variantEffectivePrice(variant, saleActive);
+    const compareAt = variantCompareAtPrice(variant, saleActive, price);
     return {
       id: variant.id,
       variantId: variant.id,
       productId: product.id,
       name: isGiftSet ? product.name : lineDisplayName(product.name, variant.label),
-      price: variantEffectivePrice(variant, saleActive),
+      price,
+      compareAtPrice: compareAt ?? undefined,
       size: isGiftSet ? "Gift set" : variant.label.trim() || undefined,
     };
   }
@@ -53,6 +58,8 @@ export function buildCartLinePayload(
   if (!Number.isFinite(price) || price <= 0) return null;
 
   const unitPrice = saleActive && product.sale_price ? product.sale_price : price;
+  const compareAtPrice =
+    saleActive && product.sale_price && unitPrice < price ? price : undefined;
   const sizeLabel = isGiftSet ? "Gift set" : "";
 
   return {
@@ -60,6 +67,7 @@ export function buildCartLinePayload(
     productId: product.id,
     name: product.name,
     price: unitPrice,
+    compareAtPrice,
     size: sizeLabel || undefined,
   };
 }

@@ -13,7 +13,7 @@ export type LegalPageContent = {
 };
 
 const CONTACT =
-  "If you have questions about these terms, contact us at hello@t40perfumes.com or through our contact page at t40perfumesng.com/contact.";
+  "If you have questions about these terms, contact us at hello@t40perfumesng.com or through our contact page at t40perfumesng.com/contact.";
 
 export const termsOfService: LegalPageContent = {
   title: "Terms of Service",
@@ -54,7 +54,7 @@ export const termsOfService: LegalPageContent = {
     {
       title: "5. Shipping and delivery",
       body: [
-        "Delivery times and shipping costs are shown at checkout and in our Shipping & Returns policy. Risk of loss passes to you when the order is delivered to the address you provide.",
+        "Delivery times are set out in our Shipping & Returns policy. Shipping costs are agreed with you after checkout — they are not included in the product total at payment. Risk of loss passes to you when the order is delivered to the address you provide.",
       ],
     },
     {
@@ -111,7 +111,7 @@ export const privacyPolicy: LegalPageContent = {
     {
       title: "1. Who we are",
       body: [
-        "T40 Perfumes operates this online store. For privacy enquiries, email hello@t40perfumes.com or use our contact page.",
+        "T40 Perfumes operates this online store. For privacy enquiries, email hello@t40perfumesng.com or use our contact page.",
       ],
     },
     {
@@ -176,7 +176,7 @@ export const privacyPolicy: LegalPageContent = {
     {
       title: "9. Your rights",
       body: [
-        "Depending on your location, you may have the right to access, correct, delete, or restrict use of your personal data, or to object to certain processing. To exercise these rights, contact us at hello@t40perfumes.com. You may also lodge a complaint with a data protection authority where applicable.",
+        "Depending on your location, you may have the right to access, correct, delete, or restrict use of your personal data, or to object to certain processing. To exercise these rights, contact us at hello@t40perfumesng.com. You may also lodge a complaint with a data protection authority where applicable.",
       ],
     },
     {
@@ -200,7 +200,7 @@ export const privacyPolicy: LegalPageContent = {
     {
       title: "13. Contact",
       body: [
-        "Questions about this policy? Email hello@t40perfumes.com or visit our contact page.",
+        "Questions about this policy? Email hello@t40perfumesng.com or visit our contact page.",
       ],
     },
   ],
@@ -216,7 +216,7 @@ export const shippingAndReturns: LegalPageContent = {
     {
       title: "1. Shipping areas",
       body: [
-        "We ship within Nigeria and to selected international destinations. Available countries and delivery options are shown at checkout. We reserve the right to refuse delivery to locations we cannot service.",
+        "We ship within Nigeria and to selected international destinations. After you order, we will confirm whether we can deliver to your location. We reserve the right to refuse delivery to places we cannot service.",
       ],
     },
     {
@@ -228,7 +228,7 @@ export const shippingAndReturns: LegalPageContent = {
     {
       title: "3. Delivery times",
       body: [
-        "Estimated delivery times depend on your location and the shipping method selected at checkout:",
+        "Estimated delivery times depend on your location and the shipping option we agree with you:",
       ],
       list: [
         "Nigeria (major cities): 2–5 business days after dispatch",
@@ -239,13 +239,13 @@ export const shippingAndReturns: LegalPageContent = {
     {
       title: "4. Shipping costs",
       body: [
-        "Shipping fees are calculated at checkout based on your delivery address and order size. Any free-shipping promotions will be clearly stated on the site or at checkout.",
+        "Shipping is not included in the product price you pay at checkout. After your order is confirmed, we will contact you to discuss delivery and agree shipping fees based on your address and order size. Any free-shipping promotions will be clearly stated on the site when they apply.",
       ],
     },
     {
       title: "5. Order tracking",
       body: [
-        "When your order is dispatched, we send a confirmation email with tracking information where available. If you do not receive an update within the expected processing window, contact us at hello@t40perfumes.com.",
+        "When your order is dispatched, we send a confirmation email with tracking information where available. If you do not receive an update within the expected processing window, contact us at hello@t40perfumesng.com.",
       ],
     },
     {
@@ -269,7 +269,7 @@ export const shippingAndReturns: LegalPageContent = {
     {
       title: "8. How to request a return",
       body: [
-        "Email hello@t40perfumes.com with your order number, reason for return, and photos if the item is damaged or incorrect. Wait for our approval and return instructions before sending anything back. Unauthorised returns may not be accepted.",
+        "Email hello@t40perfumesng.com with your order number, reason for return, and photos if the item is damaged or incorrect. Wait for our approval and return instructions before sending anything back. Unauthorised returns may not be accepted.",
       ],
     },
     {
@@ -293,7 +293,7 @@ export const shippingAndReturns: LegalPageContent = {
     {
       title: "12. Contact",
       body: [
-        "For shipping or returns questions, email hello@t40perfumes.com or use our contact page.",
+        "For shipping or returns questions, email hello@t40perfumesng.com or use our contact page.",
       ],
     },
   ],
