@@ -15,10 +15,18 @@ function isAdminHost(host: string): boolean {
   );
 }
 
+const SOCIAL_CRAWLER =
+  /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|Slackbot|Discordbot|TelegramBot|Pinterest/i;
+
 export async function middleware(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const adminHost = isAdminHost(host);
   const { pathname } = request.nextUrl;
+
+  // Let social crawlers through without auth/session work (link previews).
+  if (SOCIAL_CRAWLER.test(request.headers.get("user-agent") ?? "")) {
+    return NextResponse.next();
+  }
 
   let response = NextResponse.next({ request });
 
