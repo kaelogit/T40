@@ -26,7 +26,7 @@ export default async function ProductBarcodePage({ params }: Props) {
   return (
     <ProductBarcodePrint
       productName={data.name}
-      productSlug={data.slug}
+      productSlug={data.slug?.trim() || data.id}
       productUrl={productUrl}
     />
   );
