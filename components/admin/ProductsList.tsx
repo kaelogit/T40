@@ -2,18 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Loader2, Pencil, Search, Trash2, ExternalLink } from "lucide-react";
+import { Loader2, Pencil, Search, Trash2, ExternalLink, Barcode } from "lucide-react";
 import { formatPrice } from "@/lib/products/pricing";
-import { getProductHref } from "@/lib/products/urls";
+import { getAbsoluteProductUrl } from "@/lib/products/storeUrl";
 import { effectiveInStock, isLowStock, stockLabel } from "@/lib/products/stock";
 import { PRODUCT_CATEGORIES } from "@/lib/catalog/productCategories";
 import { isGiftSetProduct } from "@/lib/products/isGiftSetProduct";
-
-function storeProductUrl(product: { slug: string; id: string }): string {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
-  const path = getProductHref(product);
-  return base ? `${base}${path}` : path;
-}
 
 type ProductRow = {
   id: string;
@@ -189,7 +183,7 @@ export default function ProductsList() {
         <td className="p-4">
           <div className="flex items-center gap-1">
             <a
-              href={storeProductUrl(p)}
+              href={getAbsoluteProductUrl(p)}
               target="_blank"
               rel="noreferrer"
               className="p-2 hover:bg-neutral-200 transition-colors text-neutral-500 hover:text-black"
@@ -197,6 +191,16 @@ export default function ProductsList() {
               title="View on store"
             >
               <ExternalLink size={14} />
+            </a>
+            <a
+              href={`/admin/products/${p.id}/barcode`}
+              target="_blank"
+              rel="noreferrer"
+              className="p-2 hover:bg-neutral-200 transition-colors text-neutral-500 hover:text-black"
+              aria-label="Barcode"
+              title="Print barcode"
+            >
+              <Barcode size={14} />
             </a>
             <Link
               href={`/admin/products/${p.id}`}
@@ -240,7 +244,7 @@ export default function ProductsList() {
               <th className="text-left p-4 hidden md:table-cell">Category</th>
               <th className="text-left p-4">Price</th>
               <th className="text-left p-4">Status</th>
-              <th className="p-4 w-36" />
+              <th className="p-4 w-44" />
             </tr>
           </thead>
         )}
@@ -252,7 +256,7 @@ export default function ProductsList() {
               <th className="text-left p-3 hidden md:table-cell">Type</th>
               <th className="text-left p-3">Price</th>
               <th className="text-left p-3">Status</th>
-              <th className="p-3 w-36" />
+              <th className="p-3 w-44" />
             </tr>
           </thead>
         )}

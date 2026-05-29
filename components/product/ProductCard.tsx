@@ -43,6 +43,7 @@ type Props = {
 export default function ProductCard({ product, viewMode = "grid", priority = false }: Props) {
   const { addToCart } = useCart();
   const [isAdded, setIsAdded] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const saleActive = isSaleActive(product);
@@ -74,25 +75,48 @@ export default function ProductCard({ product, viewMode = "grid", priority = fal
     }).format(price);
 
   const handleAddToCart = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
 
-      if (!canAdd) return;
+      if (!canAdd || isAdding) return;
 
       const line = buildCartLinePayload(product, { isGiftSet });
       if (!line) return;
 
-      addToCart({
-        ...line,
-        image: mainImage,
-        quantity: 1,
-      });
+      setIsAdding(true);
+      try {
+        let bundleIncludes: string[] | undefined;
+        let bundleUnavailable: string[] | undefined;
+        let bundlePartial: boolean | undefined;
 
-      setIsAdded(true);
-      setTimeout(() => setIsAdded(false), 2000);
+        if (isGiftSet) {
+          const res = await fetch(`/api/gift-sets/${product.id}/availability`);
+          const data = await res.json();
+          if (!res.ok || !data.canPurchase) return;
+
+          bundleIncludes = data.availableNames;
+          bundleUnavailable =
+            data.unavailableNames?.length > 0 ? data.unavailableNames : undefined;
+          bundlePartial = data.isPartial || undefined;
+        }
+
+        addToCart({
+          ...line,
+          image: mainImage,
+          quantity: 1,
+          bundleIncludes,
+          bundleUnavailable,
+          bundlePartial,
+        });
+
+        setIsAdded(true);
+        setTimeout(() => setIsAdded(false), 2000);
+      } finally {
+        setIsAdding(false);
+      }
     },
-    [addToCart, canAdd, isGiftSet, mainImage, product]
+    [addToCart, canAdd, isAdding, isGiftSet, mainImage, product]
   );
 
   const badges = [];
@@ -169,7 +193,7 @@ export default function ProductCard({ product, viewMode = "grid", priority = fal
           <button
             type="button"
             onClick={handleAddToCart}
-            disabled={isAdded || !canAdd}
+            disabled={isAdded || isAdding || !canAdd}
             className={`self-start flex items-center gap-2 px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest font-heading transition-all mt-4 ${
               isAdded
                 ? "bg-[#c9a96e] text-white"
@@ -179,7 +203,7 @@ export default function ProductCard({ product, viewMode = "grid", priority = fal
             }`}
           >
             {isAdded ? <Check size={14} /> : <ShoppingBag size={14} />}
-            {isAdded ? "Added" : isOutOfStock ? "Sold Out" : "Add to Bag"}
+            {isAdded ? "Added" : isAdding ? "Adding..." : isOutOfStock ? "Sold Out" : "Add to Bag"}
           </button>
         </div>
       </motion.div>
@@ -232,7 +256,7 @@ export default function ProductCard({ product, viewMode = "grid", priority = fal
         <button
           type="button"
           onClick={handleAddToCart}
-          disabled={isAdded || !canAdd}
+          disabled={isAdded || isAdding || !canAdd}
           aria-label={isOutOfStock ? "Sold out" : "Add to bag"}
           className={`absolute bottom-3 right-3 z-20 pointer-events-auto w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${
             isAdded
