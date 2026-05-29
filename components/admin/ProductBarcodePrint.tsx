@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import JsBarcode from "jsbarcode";
 import QRCode from "react-qr-code";
-import { ArrowLeft, Printer } from "lucide-react";
+import { toPng } from "html-to-image";
+import { ArrowLeft, Download, Printer } from "lucide-react";
 
 export type BarcodePrintSize = "small" | "medium" | "large" | "sheet";
 
@@ -30,7 +31,9 @@ type Props = {
 
 export default function ProductBarcodePrint({ productName, productSlug, productUrl }: Props) {
   const [size, setSize] = useState<BarcodePrintSize>("medium");
+  const [downloading, setDownloading] = useState(false);
   const barcodeRef = useRef<SVGSVGElement>(null);
+  const printAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!barcodeRef.current) return;
@@ -48,6 +51,26 @@ export default function ProductBarcodePrint({ productName, productSlug, productU
   }, [productUrl, size]);
 
   const qrSize = QR_SIZES[size];
+
+  const handleDownload = async () => {
+    if (!printAreaRef.current) return;
+    setDownloading(true);
+    try {
+      const dataUrl = await toPng(printAreaRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+      });
+      const link = document.createElement("a");
+      link.download = `t40-${productSlug}-barcode-${size}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {
+      window.alert("Could not download barcode. Try again.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <>
@@ -91,7 +114,7 @@ export default function ProductBarcodePrint({ productName, productSlug, productU
             <h1 className="text-2xl font-black uppercase tracking-tighter">Product barcode</h1>
             <p className="text-sm text-neutral-500 mt-2 font-body">
               Scan the QR code or barcode to open this product on the store. Choose a label size,
-              then print.
+              then print or download.
             </p>
           </div>
 
@@ -126,17 +149,29 @@ export default function ProductBarcodePrint({ productName, productSlug, productU
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-2 bg-black text-white px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#d94625] transition-colors"
-          >
-            <Printer size={16} />
-            Print barcode
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-2 bg-black text-white px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#d94625] transition-colors"
+            >
+              <Printer size={16} />
+              Print barcode
+            </button>
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={downloading}
+              className="inline-flex items-center gap-2 border border-black px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-neutral-100 transition-colors disabled:opacity-50"
+            >
+              <Download size={16} />
+              {downloading ? "Downloading..." : "Download PNG"}
+            </button>
+          </div>
         </div>
 
         <div
+          ref={printAreaRef}
           className="admin-barcode-print-area mx-auto bg-white border border-neutral-200 shadow-sm flex flex-col items-center text-center"
           data-size={size}
           style={{
