@@ -1,12 +1,12 @@
-import AnnouncementForm from "@/components/admin/content/AnnouncementForm";
+import AnnouncementsAdmin from "@/components/admin/content/AnnouncementsAdmin";
 
-export const metadata = { title: "Announcement | T40 Perfumes" };
+export const metadata = { title: "Announcements | T40 Perfumes" };
 
 export default function AnnouncementAdminPage() {
   return (
     <div>
-      <h1 className="text-2xl font-black uppercase tracking-tighter mb-8">Announcement bar</h1>
-      <AnnouncementForm />
+      <h1 className="text-2xl font-black uppercase tracking-tighter mb-4">Announcement bar</h1>
+      <AnnouncementsAdmin />
     </div>
   );
 }

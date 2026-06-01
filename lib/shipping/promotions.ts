@@ -1,4 +1,4 @@
-export const LAGOS_FREE_SHIPPING_MIN = 80_000;
+export const LAGOS_FREE_SHIPPING_MIN = 90_000;
 export const LAGOS_STATE = "Lagos";
 
 export type LagosFreeShippingStatus = {

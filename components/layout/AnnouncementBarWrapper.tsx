@@ -1,8 +1,9 @@
-import { getAnnouncement } from "@/lib/content/announcement";
+import { getAnnouncements } from "@/lib/content/announcement";
 import AnnouncementBar from "./AnnouncementBar";
 
 export default async function AnnouncementBarWrapper() {
-  const data = await getAnnouncement();
-  if (!data.active) return null;
-  return <AnnouncementBar data={data} />;
+  const announcements = await getAnnouncements();
+  const active = announcements.filter((a) => a.active);
+  if (!active.length) return null;
+  return <AnnouncementBar announcements={active} />;
 }

@@ -34,12 +34,14 @@ export type AnnouncementLink = {
 };
 
 export type AnnouncementContent = {
+  id?: string;
   active: boolean;
   badgeLabel: string;
   messageShort: string;
   messageFull: string;
   readLinkLabel: string;
   readLinkHref: string;
+  sortOrder?: number;
   links: AnnouncementLink[];
   /** Changes when admin saves — used to re-show bar after dismiss */
   updatedAt?: string;

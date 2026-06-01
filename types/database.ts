@@ -397,15 +397,43 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["announcement_settings"]["Insert"]>;
         Relationships: [];
       };
+      announcements: {
+        Row: {
+          id: string;
+          active: boolean;
+          badge_label: string;
+          message_short: string;
+          message_full: string;
+          read_link_label: string;
+          read_link_href: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          active?: boolean;
+          badge_label?: string;
+          message_short: string;
+          message_full: string;
+          read_link_label?: string;
+          read_link_href?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["announcements"]["Insert"]>;
+        Relationships: [];
+      };
       announcement_links: {
         Row: {
           id: string;
+          announcement_id: string | null;
           label: string;
           href: string;
           sort_order: number;
         };
         Insert: {
           id?: string;
+          announcement_id?: string | null;
           label: string;
           href: string;
           sort_order?: number;
