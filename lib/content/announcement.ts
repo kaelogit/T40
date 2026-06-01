@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AnnouncementContent } from "./types";
 import { DEFAULT_ANNOUNCEMENTS } from "./defaults/announcement";
@@ -118,7 +117,9 @@ async function fetchLegacyAnnouncement(
 }
 
 export async function getAnnouncements(): Promise<AnnouncementContent[]> {
-  const supabase = await createClient();
+  // Service role on the server — announcements are public storefront content.
+  // The anon client is blocked when RLS is enabled on `announcements` without a policy.
+  const supabase = createAdminClient();
   const fromTable = await fetchAnnouncementsFromTable(supabase);
   if (fromTable?.length) return fromTable;
 

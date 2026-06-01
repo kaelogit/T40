@@ -6,6 +6,7 @@ import {
   importDefaultAnnouncementsIfEmpty,
   type AnnouncementFormInput,
 } from "@/lib/content/announcement";
+import { revalidateStorefront } from "@/lib/content/revalidateStorefront";
 
 export async function GET() {
   const auth = await requireAdminApi();
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
 
     if (body.action === "import_defaults") {
       const count = await importDefaultAnnouncementsIfEmpty();
+      revalidateStorefront();
       return NextResponse.json({ ok: true, imported: count });
     }
 
@@ -31,6 +33,7 @@ export async function POST(request: Request) {
     }
 
     const id = await createAnnouncement(body);
+    revalidateStorefront();
     return NextResponse.json({ ok: true, id });
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
@@ -43,6 +46,7 @@ export async function PUT() {
 
   try {
     const count = await importDefaultAnnouncementsIfEmpty();
+    revalidateStorefront();
     return NextResponse.json({ ok: true, imported: count });
   } catch {
     return NextResponse.json({ error: "Could not import defaults." }, { status: 400 });

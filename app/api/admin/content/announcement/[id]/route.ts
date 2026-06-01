@@ -5,6 +5,7 @@ import {
   updateAnnouncement,
   type AnnouncementFormInput,
 } from "@/lib/content/announcement";
+import { revalidateStorefront } from "@/lib/content/revalidateStorefront";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -21,6 +22,7 @@ export async function PATCH(request: Request, { params }: Params) {
     }
 
     await updateAnnouncement(id, body);
+    revalidateStorefront();
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Could not save announcement." }, { status: 400 });
@@ -34,6 +36,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   try {
     const { id } = await params;
     await deleteAnnouncement(id);
+    revalidateStorefront();
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Could not delete announcement." }, { status: 400 });
