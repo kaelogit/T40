@@ -77,8 +77,10 @@ function mapLegacyAnnouncement(
   };
 }
 
+type AnnouncementSupabase = ReturnType<typeof createAdminClient>;
+
 async function fetchAnnouncementsFromTable(
-  supabase: Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>
+  supabase: AnnouncementSupabase
 ): Promise<AnnouncementContent[] | null> {
   const { data: rows, error } = await supabase
     .from("announcements")
@@ -98,7 +100,7 @@ async function fetchAnnouncementsFromTable(
 }
 
 async function fetchLegacyAnnouncement(
-  supabase: Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>
+  supabase: AnnouncementSupabase
 ): Promise<AnnouncementContent[] | null> {
   const { data: settings } = await supabase
     .from("announcement_settings")
