@@ -6,6 +6,7 @@ import { formatPrice } from "@/lib/products/pricing";
 import GiftSetLineDetails from "@/components/product/GiftSetLineDetails";
 import { isGiftSetLine } from "@/lib/orders/bundleDetails";
 import LinePrice from "@/components/ui/LinePrice";
+import LagosFreeShippingNote from "@/components/shipping/LagosFreeShippingNote";
 
 type Props = {
   items: CartItem[];
@@ -13,6 +14,8 @@ type Props = {
   discount?: number;
   couponCode?: string | null;
   total: number;
+  state?: string;
+  country?: string;
 };
 
 export default function OrderSummary({
@@ -21,6 +24,8 @@ export default function OrderSummary({
   discount = 0,
   couponCode,
   total,
+  state,
+  country,
 }: Props) {
   return (
     <div className="bg-t40-light/50 border border-t40-light p-6 lg:p-8 lg:sticky lg:top-28">
@@ -86,10 +91,9 @@ export default function OrderSummary({
           </span>
           <span className="text-lg font-black text-t40-black">{formatPrice(total)}</span>
         </div>
-        <p className="text-[10px] text-t40-grey font-body leading-relaxed pt-3">
-          Shipping is not included. We will contact you after checkout to discuss delivery and agree
-          shipping fees.
-        </p>
+        <div className="pt-3">
+          <LagosFreeShippingNote subtotal={total} state={state} country={country} />
+        </div>
       </div>
     </div>
   );

@@ -239,7 +239,9 @@ export const shippingAndReturns: LegalPageContent = {
     {
       title: "4. Shipping costs",
       body: [
-        "Shipping is not included in the product price you pay at checkout. After your order is confirmed, we will contact you to discuss delivery and agree shipping fees based on your address and order size. Any free-shipping promotions will be clearly stated on the site when they apply.",
+        "Shipping is not included in the product price you pay at checkout, except where a promotion applies.",
+        "Free delivery within Lagos: orders over ₦80,000 (eighty thousand Naira) delivered to a Lagos address qualify for free shipping. The free-delivery threshold is based on your order subtotal after any discounts, before payment.",
+        "All other deliveries: after your order is confirmed, we will contact you to discuss delivery options and agree shipping fees based on your address and order size.",
       ],
     },
     {

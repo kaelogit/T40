@@ -3,7 +3,7 @@
 import { CreditCard } from "lucide-react";
 import PaystackButton from "./PaystackButton";
 import { formatPrice } from "@/lib/products/pricing";
-import { isNigeriaCheckout } from "./ShippingForm";
+import { isNigeriaCheckout } from "@/lib/checkout/countries";
 
 type Props = {
   total: number;

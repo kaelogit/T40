@@ -7,7 +7,8 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { CheckoutAddress, CheckoutCustomer } from "@/types/order";
 import GuestForm from "./GuestForm";
-import ShippingForm, { CHECKOUT_COUNTRY_NIGERIA } from "./ShippingForm";
+import ShippingForm from "./ShippingForm";
+import { CHECKOUT_COUNTRY_NIGERIA } from "@/lib/checkout/countries";
 import PaymentStep from "./PaymentStep";
 import OrderSummary from "./OrderSummary";
 import CouponInput, { type AppliedCoupon } from "./CouponInput";
@@ -191,7 +192,7 @@ export default function CheckoutPageContent() {
                 <h2 className="text-lg font-black font-heading uppercase tracking-wider text-t40-black mb-6">
                   Delivery address
                 </h2>
-                <ShippingForm value={address} onChange={setAddress} />
+                <ShippingForm value={address} onChange={setAddress} subtotal={orderTotal} />
               </section>
             )}
 
@@ -238,6 +239,8 @@ export default function CheckoutPageContent() {
               discount={discount}
               couponCode={appliedCoupon?.code}
               total={orderTotal}
+              state={address.state}
+              country={address.country}
             />
           </div>
         </div>

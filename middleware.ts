@@ -16,7 +16,7 @@ function isAdminHost(host: string): boolean {
 }
 
 const SOCIAL_CRAWLER =
-  /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|Slackbot|Discordbot|TelegramBot|Pinterest/i;
+  /facebookexternalhit|Facebot|meta-externalagent|meta-externalfetcher|facebookcatalog|Twitterbot|LinkedInBot|WhatsApp|Slackbot|Discordbot|TelegramBot|Pinterest/i;
 
 export async function middleware(request: NextRequest) {
   const host = request.headers.get("host") ?? "";

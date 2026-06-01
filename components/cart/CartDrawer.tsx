@@ -3,6 +3,7 @@
 import { X, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
+import LagosFreeShippingNote from "@/components/shipping/LagosFreeShippingNote";
 import CartItem from "./CartItem";
 
 export default function CartDrawer({
@@ -79,6 +80,7 @@ export default function CartDrawer({
                 ₦{cartTotal.toLocaleString()}
               </span>
             </div>
+            <LagosFreeShippingNote subtotal={cartTotal} compact />
             <Link
               href="/checkout"
               onClick={() => setIsOpen(false)}

@@ -7,6 +7,9 @@ const DISALLOW = ["/admin", "/api/admin", "/checkout", "/order-confirmation"];
 const SOCIAL_CRAWLERS = [
   "facebookexternalhit",
   "Facebot",
+  "meta-externalagent",
+  "meta-externalfetcher",
+  "facebookcatalog",
   "Twitterbot",
   "LinkedInBot",
   "WhatsApp",

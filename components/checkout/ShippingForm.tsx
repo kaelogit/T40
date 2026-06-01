@@ -1,13 +1,19 @@
 "use client";
 
 import type { CheckoutAddress } from "@/types/order";
+import LagosFreeShippingNote from "@/components/shipping/LagosFreeShippingNote";
+import {
+  CHECKOUT_COUNTRY_NIGERIA,
+  CHECKOUT_COUNTRY_OTHER,
+  isNigeriaCheckout,
+} from "@/lib/checkout/countries";
 
-export const CHECKOUT_COUNTRY_NIGERIA = "Nigeria";
-export const CHECKOUT_COUNTRY_OTHER = "Other";
+export { CHECKOUT_COUNTRY_NIGERIA, CHECKOUT_COUNTRY_OTHER, isNigeriaCheckout };
 
 type Props = {
   value: CheckoutAddress;
   onChange: (value: CheckoutAddress) => void;
+  subtotal?: number;
 };
 
 const inputClass =
@@ -24,11 +30,7 @@ const NIGERIAN_STATES = [
   "Yobe", "Zamfara",
 ];
 
-export function isNigeriaCheckout(country: string): boolean {
-  return country === CHECKOUT_COUNTRY_NIGERIA;
-}
-
-export default function ShippingForm({ value, onChange }: Props) {
+export default function ShippingForm({ value, onChange, subtotal = 0 }: Props) {
   const isNigeria = isNigeriaCheckout(value.country);
 
   const set = (field: keyof CheckoutAddress, v: string) =>
@@ -142,6 +144,16 @@ export default function ShippingForm({ value, onChange }: Props) {
           )}
         </div>
       </div>
+
+      {subtotal > 0 && (
+        <div className="rounded border border-t40-light bg-t40-light/30 p-4">
+          <LagosFreeShippingNote
+            subtotal={subtotal}
+            state={value.state}
+            country={value.country}
+          />
+        </div>
+      )}
     </div>
   );
 }

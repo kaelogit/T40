@@ -3,6 +3,7 @@
 import { Tag } from "lucide-react";
 import { formatPrice } from "@/lib/products/pricing";
 import { Button } from "@/components/ui/Button";
+import LagosFreeShippingNote from "@/components/shipping/LagosFreeShippingNote";
 
 type Props = {
   subtotal: number;
@@ -45,10 +46,9 @@ export default function CartSummary({
             {formatPrice(subtotal)}
           </span>
         </div>
-        <p className="mt-3 text-[10px] text-t40-grey font-body leading-relaxed">
-          Shipping is not included. We will contact you after checkout to discuss delivery and agree
-          shipping fees.
-        </p>
+        <div className="mt-3">
+          <LagosFreeShippingNote subtotal={subtotal} />
+        </div>
       </div>
 
       <div className="space-y-3">

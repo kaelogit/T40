@@ -17,7 +17,12 @@ export const DEFAULT_FAQ_CATEGORIES: FaqCategory[] = [
       {
         question: "How much does shipping cost?",
         answer:
-          "Shipping is not charged at checkout. After your order is confirmed, we will contact you to discuss delivery options and agree the shipping fee based on your location and order size.",
+          "Delivery within Lagos is free on orders over ₦80,000. For orders below that threshold, or for delivery outside Lagos, shipping is not charged at checkout — we will contact you after your order is confirmed to discuss delivery options and agree the fee based on your location and order size.",
+      },
+      {
+        question: "Do you offer free delivery in Lagos?",
+        answer:
+          "Yes. Orders over ₦80,000 delivered within Lagos qualify for free shipping. Add items to your cart to see how close you are to the threshold. Delivery to other states in Nigeria and international destinations is quoted separately after checkout.",
       },
       {
         question: "Can I change my delivery address after ordering?",
