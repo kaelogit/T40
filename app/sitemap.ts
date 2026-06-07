@@ -9,6 +9,7 @@ const STATIC_PATHS = [
   "/contact",
   "/faq",
   "/blog",
+  "/events",
   "/terms",
   "/privacy",
   "/shipping",
@@ -65,6 +66,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             : now,
         changeFrequency: "monthly",
         priority: 0.6,
+      });
+    }
+
+    const { data: events } = await supabase
+      .from("events")
+      .select("slug, updated_at")
+      .eq("published", true);
+
+    for (const event of events ?? []) {
+      if (!event.slug) continue;
+      entries.push({
+        url: `${base}/events/${event.slug}`,
+        lastModified: event.updated_at ? new Date(event.updated_at) : now,
+        changeFrequency: "weekly",
+        priority: 0.7,
       });
     }
   } catch {

@@ -22,6 +22,7 @@ const SUPPORT_LINKS = [
 
 const COMPANY_LINKS = [
   { label: "About T40", href: "/about" },
+  { label: "Events", href: "/events" },
   { label: "Journal", href: "/blog" },
   { label: "Careers", href: "/careers" },
   { label: "Terms of Service", href: "/terms" },

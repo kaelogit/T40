@@ -47,6 +47,31 @@ export type AnnouncementContent = {
   updatedAt?: string;
 };
 
+export type EventScheduleItem = {
+  label: string;
+  time: string;
+};
+
+export type StoreEvent = {
+  id?: string;
+  slug: string;
+  title: string;
+  tagline: string;
+  description: string;
+  venueName: string;
+  venueAddress: string;
+  city: string;
+  startsAt: string;
+  endsAt?: string | null;
+  schedule: EventScheduleItem[];
+  imageUrl: string;
+  ticketUrl: string;
+  ticketCtaLabel: string;
+  published?: boolean;
+  sortOrder?: number;
+  updatedAt?: string;
+};
+
 export type AboutAwardProduct = {
   name: string;
   slug: string;

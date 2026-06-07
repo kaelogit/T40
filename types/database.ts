@@ -441,6 +441,50 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["announcement_links"]["Insert"]>;
         Relationships: [];
       };
+      events: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          tagline: string;
+          description: string;
+          venue_name: string;
+          venue_address: string;
+          city: string;
+          starts_at: string;
+          ends_at: string | null;
+          schedule: unknown;
+          image_url: string;
+          ticket_url: string;
+          ticket_cta_label: string;
+          published: boolean;
+          sort_order: number;
+          updated_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          tagline?: string;
+          description?: string;
+          venue_name?: string;
+          venue_address?: string;
+          city?: string;
+          starts_at: string;
+          ends_at?: string | null;
+          schedule?: unknown;
+          image_url?: string;
+          ticket_url?: string;
+          ticket_cta_label?: string;
+          published?: boolean;
+          sort_order?: number;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["events"]["Insert"]>;
+        Relationships: [];
+      };
       site_pages: {
         Row: {
           page_key: string;

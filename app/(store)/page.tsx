@@ -1,5 +1,6 @@
 import Hero from "@/components/home/Hero";
 import BestSellers from "@/components/home/BestSellers";
+import EventSectionWrapper from "@/components/home/EventSectionWrapper";
 import ShopByCategory from "@/components/home/ShopByCategory";
 import NewArrivals from "@/components/home/NewArrivals";
 import FlashSale from "@/components/home/FlashSale";
@@ -22,6 +23,7 @@ export default function Home() {
     <div className="min-h-screen bg-t40-white">
       <Hero />
       <BestSellers />
+      <EventSectionWrapper />
       <ShopByCategory />
       <NewArrivals />
       <FlashSale />

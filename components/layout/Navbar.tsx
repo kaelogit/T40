@@ -54,6 +54,7 @@ const BASE_CATEGORIES = [
     isSpecial: true,
     children: [] as { label: string; href: string }[],
   },
+  { label: "Events", href: "/events", children: [] as { label: string; href: string }[] },
   { 
     label: "Shop All", 
     href: "/shop",
@@ -78,6 +79,7 @@ const BASE_CATEGORIES = [
 ];
 
 const MOBILE_UTILITY_LINKS = [
+  { label: "Events", href: "/events" },
   { label: "About", href: "/about" },
   { label: "Journal", href: "/blog" },
   { label: "Contact", href: "/contact" },
