@@ -23,12 +23,12 @@ export default function Home() {
     <div className="min-h-screen bg-t40-white">
       <Hero />
       <BestSellers />
-      <EventSectionWrapper />
       <ShopByCategory />
       <NewArrivals />
       <FlashSale />
       <TrendingNow />
       <FragranceFinder />
+      <EventSectionWrapper />
       <GiftSets />
       <BrandStory />
     </div>

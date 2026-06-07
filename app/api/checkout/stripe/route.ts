@@ -5,6 +5,13 @@ import { getSiteUrl } from "@/lib/utils";
 import { prepareCheckoutIntent, attachPaymentToIntent, getCheckoutIntent } from "@/lib/orders/checkoutIntent";
 
 export async function POST(request: Request) {
+  if (process.env.STRIPE_CHECKOUT_ENABLED !== "true") {
+    return NextResponse.json(
+      { error: "International card payments are not available yet. Please use Paystack (Nigeria)." },
+      { status: 503 }
+    );
+  }
+
   try {
     if (!hasAdminClient()) {
       return NextResponse.json({ error: "Server configuration error." }, { status: 500 });

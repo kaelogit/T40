@@ -1,9 +1,10 @@
 "use client";
 
-import { CreditCard } from "lucide-react";
+import { CreditCard, Lock } from "lucide-react";
 import PaystackButton from "./PaystackButton";
 import { formatPrice } from "@/lib/products/pricing";
 import { isNigeriaCheckout } from "@/lib/checkout/countries";
+import { Button } from "@/components/ui/Button";
 
 type Props = {
   total: number;
@@ -12,6 +13,8 @@ type Props = {
   onPaystack: () => Promise<void>;
   onStripe: () => Promise<void>;
   stripeLoading?: boolean;
+  onUsePaystack?: () => void;
+  onBackToDelivery?: () => void;
 };
 
 export default function PaymentStep({
@@ -21,8 +24,11 @@ export default function PaymentStep({
   onPaystack,
   onStripe,
   stripeLoading,
+  onUsePaystack,
+  onBackToDelivery,
 }: Props) {
   const isNigeria = isNigeriaCheckout(country);
+  const stripeEnabled = process.env.NEXT_PUBLIC_STRIPE_CHECKOUT_ENABLED === "true";
 
   return (
     <div className="space-y-6">
@@ -34,8 +40,8 @@ export default function PaymentStep({
           </>
         ) : (
           <>
-            Pay securely with <strong className="text-t40-black">Stripe</strong> using your
-            international card. Amount is charged in Naira (₦).
+            International card payments via Stripe are <strong className="text-t40-black">coming soon</strong>.
+            For now, checkout with Paystack — available for Nigeria delivery addresses.
           </>
         )}
       </p>
@@ -49,7 +55,7 @@ export default function PaymentStep({
 
       {isNigeria ? (
         <PaystackButton disabled={disabled} onPay={onPaystack} />
-      ) : (
+      ) : stripeEnabled ? (
         <button
           type="button"
           onClick={onStripe}
@@ -59,6 +65,36 @@ export default function PaymentStep({
           <CreditCard size={16} />
           {stripeLoading ? "Redirecting..." : "Pay with Stripe"}
         </button>
+      ) : (
+        <div className="space-y-4">
+          <div
+            className="w-full flex items-center justify-center gap-2 border border-t40-light bg-t40-light/40 text-t40-grey py-4 px-6 text-[11px] font-bold uppercase tracking-[0.2em] font-heading cursor-not-allowed select-none"
+            aria-disabled="true"
+          >
+            <Lock size={16} className="shrink-0" />
+            Pay with Stripe — Coming soon
+          </div>
+
+          {onUsePaystack && (
+            <Button
+              type="button"
+              className="w-full"
+              onClick={onUsePaystack}
+            >
+              Use Paystack (Nigeria)
+            </Button>
+          )}
+
+          {onBackToDelivery && (
+            <button
+              type="button"
+              onClick={onBackToDelivery}
+              className="w-full text-center text-[10px] font-bold uppercase tracking-[0.2em] font-heading text-t40-grey hover:text-t40-black transition-colors py-2"
+            >
+              ← Back to delivery address
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

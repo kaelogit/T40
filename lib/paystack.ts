@@ -1,5 +1,39 @@
 const PAYSTACK_BASE = "https://api.paystack.co";
 
+import { createHmac, timingSafeEqual } from "crypto";
+
+/** Verify `x-paystack-signature` against the raw webhook body (HMAC SHA512). */
+export function verifyPaystackWebhookSignature(
+  rawBody: string,
+  signature: string | null | undefined,
+  secret: string
+): boolean {
+  const sig = signature?.trim();
+  if (!sig || !rawBody) return false;
+
+  const hash = createHmac("sha512", secret).update(rawBody, "utf8").digest("hex");
+
+  const expected = Buffer.from(hash, "utf8");
+  const received = Buffer.from(sig, "utf8");
+  if (expected.length !== received.length) return false;
+
+  try {
+    return timingSafeEqual(expected, received);
+  } catch {
+    return false;
+  }
+}
+
+export type PaystackWebhookEvent = {
+  event?: string;
+  data?: {
+    reference?: string;
+    id?: number;
+    status?: string;
+    metadata?: { checkout_intent_id?: string };
+  };
+};
+
 export type PaystackInitParams = {
   email: string;
   amountNgn: number;

@@ -207,6 +207,14 @@ export default function CheckoutPageContent() {
                   onPaystack={handlePaystack}
                   onStripe={handleStripe}
                   stripeLoading={stripeLoading}
+                  onUsePaystack={() => {
+                    setAddress((a) => ({ ...a, country: CHECKOUT_COUNTRY_NIGERIA }));
+                    setError(null);
+                  }}
+                  onBackToDelivery={() => {
+                    setStep(1);
+                    setError(null);
+                  }}
                 />
               </section>
             )}

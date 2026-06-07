@@ -63,7 +63,7 @@ export default function ShippingForm({ value, onChange, subtotal = 0 }: Props) {
         <p className="mt-2 text-xs text-t40-grey font-body leading-relaxed">
           {isNigeria
             ? "Nigerian orders pay with Paystack (card, bank transfer, USSD)."
-            : "International orders pay with Stripe (card). Prices are in Naira (₦)."}
+            : "International card payments (Stripe) are coming soon. Select Nigeria above to pay with Paystack now."}
         </p>
       </div>
 
