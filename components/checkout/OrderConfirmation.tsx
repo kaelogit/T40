@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle, Loader2 } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/products/pricing";
 import { Button } from "@/components/ui/Button";
 import GiftSetLineDetails from "@/components/product/GiftSetLineDetails";
@@ -31,6 +32,7 @@ type OrderLine = {
 
 export default function OrderConfirmation({ checkoutIntentId }: { checkoutIntentId: string }) {
   const searchParams = useSearchParams();
+  const { clearCart } = useCart();
   const [order, setOrder] = useState<OrderInfo | null>(null);
   const [items, setItems] = useState<OrderLine[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,11 +58,15 @@ export default function OrderConfirmation({ checkoutIntentId }: { checkoutIntent
         } else {
           setOrder(data.order);
           setItems(Array.isArray(data.items) ? data.items : []);
+          const status = data.order?.status as string | undefined;
+          if (status === "paid" || status === "delivered") {
+            clearCart();
+          }
         }
       })
       .catch(() => setError("Could not load order."))
       .finally(() => setLoading(false));
-  }, [checkoutIntentId, searchParams]);
+  }, [checkoutIntentId, clearCart, searchParams]);
 
   if (loading) {
     return (

@@ -34,7 +34,7 @@ const emptyAddress: CheckoutAddress = {
 export default function CheckoutPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { cart, cartTotal, clearCart } = useCart();
+  const { cart, cartTotal } = useCart();
 
   const [step, setStep] = useState(0);
   const [customer, setCustomer] = useState<CheckoutCustomer>(emptyCustomer);
@@ -42,22 +42,25 @@ export default function CheckoutPageContent() {
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [stripeLoading, setStripeLoading] = useState(false);
+  const [redirectingToPayment, setRedirectingToPayment] = useState(false);
 
   const cancelled = searchParams.get("cancelled");
   const discount = appliedCoupon?.discountAmount ?? 0;
   const orderTotal = Math.max(0, cartTotal - discount);
 
   useEffect(() => {
-    if (cart.length === 0) {
+    if (cart.length === 0 && !redirectingToPayment) {
       router.replace("/cart");
     }
-  }, [cart.length, router]);
+  }, [cart.length, redirectingToPayment, router]);
 
-  if (cart.length === 0) {
+  if (cart.length === 0 && !redirectingToPayment) {
     return null;
   }
 
   const handlePaystack = async () => {
+    setError(null);
+    setRedirectingToPayment(true);
     try {
       const payRes = await fetch("/api/checkout/paystack", {
         method: "POST",
@@ -73,11 +76,15 @@ export default function CheckoutPageContent() {
       if (!payRes.ok) {
         throw new Error(payData.error ?? "Paystack failed.");
       }
-      if (payData.authorizationUrl) {
-        clearCart();
-        window.location.href = payData.authorizationUrl;
+      if (!payData.authorizationUrl) {
+        throw new Error(
+          "Paystack did not return a payment link. Check PAYSTACK_SECRET_KEY on the server."
+        );
       }
+      // Keep cart until payment succeeds — clearing here races with checkout redirect.
+      window.location.assign(payData.authorizationUrl);
     } catch (err) {
+      setRedirectingToPayment(false);
       setError(err instanceof Error ? err.message : "Payment failed.");
     }
   };
@@ -85,6 +92,7 @@ export default function CheckoutPageContent() {
   const handleStripe = async () => {
     setStripeLoading(true);
     setError(null);
+    setRedirectingToPayment(true);
     try {
       const res = await fetch("/api/checkout/stripe", {
         method: "POST",
@@ -100,11 +108,12 @@ export default function CheckoutPageContent() {
       if (!res.ok) {
         throw new Error(data.error ?? "Stripe failed.");
       }
-      if (data.url) {
-        clearCart();
-        window.location.href = data.url;
+      if (!data.url) {
+        throw new Error("Stripe did not return a checkout link.");
       }
+      window.location.assign(data.url);
     } catch (err) {
+      setRedirectingToPayment(false);
       setError(err instanceof Error ? err.message : "Payment failed.");
       setStripeLoading(false);
     }
@@ -204,6 +213,7 @@ export default function CheckoutPageContent() {
                 <PaymentStep
                   total={orderTotal}
                   country={address.country}
+                  disabled={redirectingToPayment || stripeLoading}
                   onPaystack={handlePaystack}
                   onStripe={handleStripe}
                   stripeLoading={stripeLoading}
