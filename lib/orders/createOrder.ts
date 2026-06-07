@@ -27,34 +27,48 @@ async function getDb() {
   return hasAdminClient() ? createAdminClient() : await createClient();
 }
 
-async function resolveLineItem(item: CheckoutCartItem) {
-  const variantId = item.variantId ?? (isUuid(item.id) ? item.id : null);
+async function resolveProductLine(productId: string, sizeLabel: string) {
+  const variant = await resolveVariantByLegacyLine(productId, sizeLabel);
+  if (!variant) return null;
 
-  if (variantId) {
-    const resolved = await getVariantWithProduct(variantId);
-    if (!resolved) {
-      return { error: `Variant not found for ${item.name}.` as const };
+  const supabase = await createClient();
+  const { data: product } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (!product) return null;
+  return { variant, product, variantId: variant.id };
+}
+
+async function resolveLineItem(item: CheckoutCartItem) {
+  const candidateVariantId = item.variantId ?? (isUuid(item.id) ? item.id : null);
+
+  if (candidateVariantId) {
+    const resolved = await getVariantWithProduct(candidateVariantId);
+    if (resolved) {
+      const { variant, product } = resolved;
+      return { variant, product, variantId: variant.id };
     }
-    const { variant, product } = resolved;
-    return { variant, product, variantId: variant.id };
+
+    // Older cart lines used product UUID as id when variants were not loaded client-side.
+    const byProductId = await resolveProductLine(candidateVariantId, item.size?.trim() ?? "");
+    if (byProductId) return byProductId;
+
+    return { error: `Variant not found for ${item.name}.` as const };
   }
 
   const legacy = parseLegacyCartLineId(item.id);
   if (legacy) {
-    const variant = await resolveVariantByLegacyLine(legacy.productId, legacy.sizeLabel);
-    if (!variant) {
-      return { error: `Product not found: ${item.name}` as const };
-    }
-    const supabase = await createClient();
-    const { data: product } = await supabase
-      .from("products")
-      .select("*")
-      .eq("id", legacy.productId)
-      .maybeSingle();
-    if (!product) {
-      return { error: `Product not found: ${item.name}` as const };
-    }
-    return { variant, product, variantId: variant.id };
+    const resolved = await resolveProductLine(legacy.productId, legacy.sizeLabel);
+    if (resolved) return resolved;
+    return { error: `Product not found: ${item.name}` as const };
+  }
+
+  if (item.productId && isUuid(item.productId)) {
+    const resolved = await resolveProductLine(item.productId, item.size?.trim() ?? "");
+    if (resolved) return resolved;
   }
 
   return { error: "Invalid product in cart." as const };

@@ -64,15 +64,15 @@ export function buildCartLinePayload(
   const unitPrice = saleActive && product.sale_price ? product.sale_price : price;
   const compareAtPrice =
     saleActive && product.sale_price && unitPrice < price ? price : undefined;
-  const sizeLabel = isGiftSet ? "Gift set" : "";
+  const legacyKey = isGiftSet ? "Gift set" : "default";
 
   return {
-    id: `${product.id}::${sizeLabel}`,
+    id: `${product.id}::${legacyKey}`,
     productId: product.id,
     name: product.name,
     price: unitPrice,
     compareAtPrice,
-    size: sizeLabel || undefined,
+    size: isGiftSet ? "Gift set" : undefined,
   };
 }
 

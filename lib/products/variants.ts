@@ -238,9 +238,11 @@ export async function enrichProductsWithVariantsClient(
   return products.map((p) => attachVariantsToProduct(p, map.get(p.id) ?? []));
 }
 
-/** Legacy cart lines: `{productId}::{sizeLabel}` */
+/** Legacy cart lines: `{productId}::{sizeLabel}` (sizeLabel may be empty for single-size products). */
 export function parseLegacyCartLineId(id: string): { productId: string; sizeLabel: string } | null {
-  const parts = id.split("::");
-  if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
-  return { productId: parts[0], sizeLabel: parts[1] };
+  const sep = id.indexOf("::");
+  if (sep <= 0) return null;
+  const productId = id.slice(0, sep);
+  if (!productId) return null;
+  return { productId, sizeLabel: id.slice(sep + 2) };
 }
