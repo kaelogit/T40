@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Download, Loader2, Search } from "lucide-react";
 import { formatPrice } from "@/lib/products/pricing";
 
@@ -38,6 +38,7 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 export default function OrdersList() {
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("");
@@ -161,15 +162,21 @@ export default function OrdersList() {
             </thead>
             <tbody>
               {orders.map((o) => (
-                <tr key={o.id} className="border-b border-neutral-100 hover:bg-neutral-50/50">
-                  <td className="p-4">
-                    <Link
-                      href={`/admin/orders/${o.id}`}
-                      className="font-bold text-xs hover:text-[#d94625]"
-                    >
-                      {o.order_number}
-                    </Link>
-                  </td>
+                <tr
+                  key={o.id}
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => router.push(`/admin/orders/${o.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      router.push(`/admin/orders/${o.id}`);
+                    }
+                  }}
+                  className="border-b border-neutral-100 hover:bg-neutral-50 cursor-pointer focus:outline-none focus:bg-neutral-50"
+                  aria-label={`View order ${o.order_number}`}
+                >
+                  <td className="p-4 font-bold text-xs">{o.order_number}</td>
                   <td className="p-4 text-xs">
                     {o.first_name} {o.last_name}
                     <span className="block text-[10px] text-neutral-400">{o.email}</span>
