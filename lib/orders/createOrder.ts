@@ -8,15 +8,21 @@ import {
   parseLegacyCartLineId,
   variantCompareAtPrice,
   variantEffectivePrice,
+  mapVariant,
+  getDefaultVariant,
+  type ProductVariant,
+  type VariantRow,
 } from "@/lib/products/variants";
-import {
-  getVariantWithProduct,
-  resolveVariantByLegacyLine,
-} from "@/lib/products/variants.server";
 import { effectiveInStock } from "@/lib/products/stock";
 import { isSaleActive } from "@/lib/products/sale";
 import { isUuid } from "@/lib/products/urls";
 import type { CheckoutAddress, CheckoutCartItem, CheckoutCustomer } from "@/types/order";
+
+type ResolvedLineItem = {
+  variant: ProductVariant | null;
+  product: Record<string, unknown> & { id: string; name: string; price: number | string; sale_price?: number | string | null; images?: string[] | null; product_type?: string | null; category?: string | null; stock_quantity?: number | null; on_sale?: boolean | null; sale_ends_at?: string | null };
+  variantId: string | null;
+};
 
 function generateOrderNumber(): string {
   const suffix = Date.now().toString(36).toUpperCase().slice(-6);
@@ -27,11 +33,66 @@ async function getDb() {
   return hasAdminClient() ? createAdminClient() : await createClient();
 }
 
-async function resolveProductLine(productId: string, sizeLabel: string) {
-  const variant = await resolveVariantByLegacyLine(productId, sizeLabel);
-  if (!variant) return null;
+/** Checkout uses service role when available — avoids RLS gaps on variants during payment. */
+async function getCheckoutDb() {
+  return getDb();
+}
 
-  const supabase = await createClient();
+async function loadVariantForProduct(
+  productId: string,
+  sizeLabel: string
+): Promise<ProductVariant | null> {
+  const supabase = await getCheckoutDb();
+  const { data } = await supabase
+    .from("product_variants")
+    .select("*")
+    .eq("product_id", productId)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
+  const variants = ((data as VariantRow[]) ?? []).map(mapVariant);
+  if (!variants.length) return null;
+
+  const normalizedSize = sizeLabel.trim();
+  if (normalizedSize && normalizedSize !== "default") {
+    const match = variants.find(
+      (v) =>
+        v.label === normalizedSize ||
+        v.label.replace(/\s/g, "") === normalizedSize.replace(/\s/g, "")
+    );
+    if (match) return match;
+  }
+
+  return getDefaultVariant(variants);
+}
+
+async function loadVariantWithProduct(variantId: string): Promise<ResolvedLineItem | null> {
+  const supabase = await getCheckoutDb();
+  const { data: variantRow } = await supabase
+    .from("product_variants")
+    .select("*")
+    .eq("id", variantId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!variantRow) return null;
+
+  const variant = mapVariant(variantRow as VariantRow);
+  const { data: product } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", variant.product_id)
+    .maybeSingle();
+
+  if (!product) return null;
+  return { variant, product, variantId: variant.id };
+}
+
+async function resolveProductLine(
+  productId: string,
+  sizeLabel: string
+): Promise<ResolvedLineItem | null> {
+  const supabase = await getCheckoutDb();
   const { data: product } = await supabase
     .from("products")
     .select("*")
@@ -39,24 +100,22 @@ async function resolveProductLine(productId: string, sizeLabel: string) {
     .maybeSingle();
 
   if (!product) return null;
-  return { variant, product, variantId: variant.id };
+
+  const variant = await loadVariantForProduct(productId, sizeLabel);
+  return { variant, product, variantId: variant?.id ?? null };
 }
 
-async function resolveLineItem(item: CheckoutCartItem) {
+async function resolveLineItem(item: CheckoutCartItem): Promise<ResolvedLineItem | { error: string }> {
   const candidateVariantId = item.variantId ?? (isUuid(item.id) ? item.id : null);
 
   if (candidateVariantId) {
-    const resolved = await getVariantWithProduct(candidateVariantId);
-    if (resolved) {
-      const { variant, product } = resolved;
-      return { variant, product, variantId: variant.id };
-    }
+    const byVariant = await loadVariantWithProduct(candidateVariantId);
+    if (byVariant) return byVariant;
 
-    // Older cart lines used product UUID as id when variants were not loaded client-side.
     const byProductId = await resolveProductLine(candidateVariantId, item.size?.trim() ?? "");
     if (byProductId) return byProductId;
 
-    return { error: `Variant not found for ${item.name}.` as const };
+    return { error: `Product not found: ${item.name}` as const };
   }
 
   const legacy = parseLegacyCartLineId(item.id);
@@ -74,8 +133,26 @@ async function resolveLineItem(item: CheckoutCartItem) {
   return { error: "Invalid product in cart." as const };
 }
 
+function productLevelPrice(
+  product: ResolvedLineItem["product"],
+  onSale: boolean
+): { unitPrice: number; compareAt: number | null } {
+  const base = Number(product.price);
+  const unitPrice =
+    onSale && product.sale_price != null && Number(product.sale_price) > 0
+      ? Number(product.sale_price)
+      : base;
+  const compareAt =
+    onSale && product.sale_price != null && unitPrice < base
+      ? base
+      : unitPrice < base
+        ? base
+        : null;
+  return { unitPrice, compareAt };
+}
+
 export async function validateAndPriceItems(items: CheckoutCartItem[]) {
-  const supabase = await createClient();
+  const supabase = await getCheckoutDb();
   const priced: CheckoutCartItem[] = [];
   let subtotal = 0;
 
@@ -103,7 +180,11 @@ export async function validateAndPriceItems(items: CheckoutCartItem[]) {
     let bundleIncludes: string[] | undefined = item.bundleIncludes;
     let bundleUnavailable: string[] | undefined;
     let bundlePartial: boolean | undefined;
-    let lineName = lineDisplayName(product.name, variant.label);
+    let lineName = variant
+      ? lineDisplayName(product.name, variant.label)
+      : item.size && item.size !== "default"
+        ? lineDisplayName(product.name, item.size)
+        : product.name;
 
     if (isGiftSet) {
       const contents = await getGiftSetContents(supabase, product.id);
@@ -127,22 +208,26 @@ export async function validateAndPriceItems(items: CheckoutCartItem[]) {
     }
 
     const onSale = isSaleActive(product);
-    const unitPrice = variantEffectivePrice(variant, onSale);
-    const compareAt = variantCompareAtPrice(variant, onSale, unitPrice);
+    const { unitPrice, compareAt } = variant
+      ? {
+          unitPrice: variantEffectivePrice(variant, onSale),
+          compareAt: variantCompareAtPrice(variant, onSale, variantEffectivePrice(variant, onSale)),
+        }
+      : productLevelPrice(product, onSale);
 
     const lineTotal = unitPrice * item.quantity;
     subtotal += lineTotal;
 
     priced.push({
-      id: variantId,
-      variantId,
+      id: variantId ?? product.id,
+      variantId: variantId ?? undefined,
       productId: product.id,
       name: lineName,
       price: unitPrice,
       compareAtPrice: compareAt ?? undefined,
       image: product.images?.[0] ?? item.image,
       quantity: item.quantity,
-      size: isGiftSet ? "Gift set" : variant.label.trim() || undefined,
+      size: isGiftSet ? "Gift set" : variant?.label.trim() || item.size || undefined,
       bundleIncludes,
       bundleUnavailable,
       bundlePartial,
