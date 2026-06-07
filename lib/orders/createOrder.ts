@@ -299,7 +299,7 @@ export async function createOrderRecord(
     return {
       order_id: order.id,
       product_id: item.productId ?? null,
-      variant_id: item.variantId ?? (isUuid(item.id) ? item.id : null),
+      variant_id: item.variantId ?? null,
       product_name: item.name,
       product_image: item.image,
       size: item.size ?? null,
