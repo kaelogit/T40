@@ -286,6 +286,84 @@ function BannerLayout({
   );
 }
 
+function RollingLayout({
+  eyebrow,
+  title,
+  percentOff,
+  endsAt,
+  onExpired,
+}: {
+  eyebrow: string;
+  title: string;
+  percentOff: number;
+  endsAt: string;
+  onExpired: () => void;
+}) {
+  const tickerItems = [
+    eyebrow,
+    title,
+    `${percentOff}% off everything`,
+    "Free Lagos delivery over ₦150,000",
+    "Shop before it's gone",
+  ];
+
+  const row = (
+    <>
+      {tickerItems.map((text) => (
+        <span key={text} className="flex items-center gap-12 shrink-0">
+          <span className="text-t40-white/90 text-[11px] md:text-xs font-bold uppercase tracking-[0.35em] font-heading">
+            {text}
+          </span>
+          <span className="text-[#d94625] text-lg leading-none" aria-hidden>
+            ✦
+          </span>
+        </span>
+      ))}
+    </>
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      className="relative overflow-hidden bg-t40-black border-y border-[#d94625]/30"
+    >
+      <div className="py-4 md:py-5 overflow-hidden">
+        <div className="t40-marquee-track flex w-max items-center gap-12">
+          {row}
+          {row}
+        </div>
+      </div>
+
+      <div className="border-t border-white/10 bg-t40-black/95 px-4 py-5 md:py-6">
+        <div className="t40-container flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="text-center md:text-left">
+            <p className="text-[#d94625] text-[10px] font-bold uppercase tracking-[0.4em] mb-2 font-heading">
+              {eyebrow}
+            </p>
+            <h3 className="text-xl md:text-3xl font-black uppercase tracking-tighter text-t40-white font-heading">
+              {title}
+            </h3>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="bg-white/5 px-4 py-2 backdrop-blur-sm border border-white/10">
+              <FlashSaleCountdown endsAt={endsAt} onExpired={onExpired} theme="dark" />
+            </div>
+            <Link
+              href="/shop/flash-sales"
+              className="inline-flex items-center justify-center bg-[#d94625] text-t40-white px-8 py-3 text-[10px] font-bold uppercase tracking-[0.2em] font-heading hover:bg-t40-white hover:text-t40-black transition-colors"
+            >
+              Shop the sale
+            </Link>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function FlashSale() {
   const generalSale = useGeneralFlashSale();
   const [items, setItems] = useState<SaleItem[]>([]);
@@ -347,7 +425,9 @@ export default function FlashSale() {
   const shippingNote = generalSaleShippingSummary(generalSale);
 
   const showSection = useMemo(() => {
-    if (generalSale) return items.length > 0 || layout === "banner";
+    if (generalSale) {
+      return items.length > 0 || layout === "banner" || layout === "rolling";
+    }
     return items.length > 0;
   }, [generalSale, items.length, layout]);
 
@@ -363,6 +443,30 @@ export default function FlashSale() {
 
   const mainItem = items[0];
   const secondaryItems = items.slice(1);
+
+  if (layout === "rolling" && endsAt && generalSale) {
+    return (
+      <section className="w-full bg-t40-white py-16 lg:py-20">
+        <RollingLayout
+          eyebrow={eyebrow}
+          title={title}
+          percentOff={generalSale.percentOff}
+          endsAt={endsAt}
+          onExpired={fetchSales}
+        />
+        {shippingNote && (
+          <p className="t40-container px-4 md:px-8 mt-6 text-[10px] text-neutral-500 font-body">
+            {shippingNote}
+          </p>
+        )}
+        {items.length > 0 && (
+          <div className="t40-container px-4 md:px-8 mt-10">
+            <GridLayout items={items.slice(0, 4)} onExpired={fetchSales} />
+          </div>
+        )}
+      </section>
+    );
+  }
 
   return (
     <section className="w-full bg-t40-white py-20 lg:py-28">

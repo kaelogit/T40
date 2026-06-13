@@ -8,7 +8,7 @@ import { useGeneralFlashSale } from "@/context/GeneralFlashSaleContext";
 import { cartLineId, formatPrice } from "@/lib/products/pricing";
 import { buildCartLinePayload } from "@/lib/products/cartLine";
 import type { ProductDetail as ProductDetailType, VolumeOption } from "@/types/product";
-import { getEffectiveSaleState, effectiveProductUnitPrice, effectiveVariantUnitPrice } from "@/lib/sales/effectivePricing";
+import { getEffectiveSaleState, effectiveProductUnitPrice, effectiveVariantUnitPrice, getSaleCountdownEndsAt } from "@/lib/sales/effectivePricing";
 import ProductImages from "./ProductImages";
 import VolumeSelector from "./VolumeSelector";
 import StockBadge from "./StockBadge";
@@ -60,7 +60,7 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
 
   const saleState = getEffectiveSaleState(product, generalSale);
   const onSale = saleState.active;
-  const saleEndsAt = saleState.endsAt;
+  const saleEndsAt = getSaleCountdownEndsAt(product, generalSale);
 
   const isGiftSet =
     product.product_type === "gift_set" ||
@@ -263,7 +263,10 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
 
             {onSale && saleEndsAt && !isGiftSet && (
               <div className="mt-4">
-                <FlashSaleCountdown endsAt={saleEndsAt} />
+                <FlashSaleCountdown
+                  endsAt={saleEndsAt}
+                  label={saleState.source === "general" ? "Sale ends in" : undefined}
+                />
               </div>
             )}
 

@@ -9,6 +9,9 @@ type Props = {
   /** light = product page; dark = homepage flash sale cards */
   theme?: "light" | "dark";
   className?: string;
+  /** Defaults to "Flash sale ends in" on light theme */
+  label?: string;
+  compact?: boolean;
 };
 
 export default function FlashSaleCountdown({
@@ -16,6 +19,8 @@ export default function FlashSaleCountdown({
   onExpired,
   theme = "light",
   className = "",
+  label,
+  compact = false,
 }: Props) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [expired, setExpired] = useState(false);
@@ -66,24 +71,26 @@ export default function FlashSaleCountdown({
     </>
   );
 
+  const labelText = label ?? (isDark ? "Ends in:" : "Sale ends in");
+
   if (isDark) {
     return (
       <div
-        className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] font-heading text-t40-white/90 ${className}`}
+        className={`flex items-center gap-1.5 ${compact ? "text-[9px]" : "text-[10px]"} font-bold uppercase tracking-[0.2em] font-heading text-t40-white/90 ${className}`}
       >
-        <Clock size={12} className="text-[#d94625]" />
-        <span className="text-[#d94625]">Ends In:</span>
-        <span>{timerText}</span>
+        <Clock size={compact ? 10 : 12} className="text-[#d94625]" />
+        <span className="text-[#d94625]">{labelText}</span>
+        <span className="tabular-nums">{timerText}</span>
       </div>
     );
   }
 
   return (
     <div
-      className={`inline-flex items-center gap-2 border border-[#d94625]/25 bg-[#d94625]/5 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] font-heading ${className}`}
+      className={`inline-flex items-center gap-2 border border-[#d94625]/25 bg-[#d94625]/5 ${compact ? "px-2 py-1 text-[9px]" : "px-3 py-2 text-[10px]"} font-bold uppercase tracking-[0.2em] font-heading ${className}`}
     >
-      <Clock size={12} className="text-[#d94625] shrink-0" />
-      <span className="text-[#d94625]">Flash sale ends in</span>
+      <Clock size={compact ? 10 : 12} className="text-[#d94625] shrink-0" />
+      <span className="text-[#d94625]">{labelText}</span>
       <span className="text-t40-black tabular-nums">{timerText}</span>
     </div>
   );

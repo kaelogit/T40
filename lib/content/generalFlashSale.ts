@@ -17,7 +17,13 @@ function parseContent(raw: unknown): GeneralFlashSaleContent {
     endsAt: c.endsAt ?? null,
     eyebrow: c.eyebrow?.trim() || DEFAULT_GENERAL_FLASH_SALE.eyebrow,
     title: c.title?.trim() || DEFAULT_GENERAL_FLASH_SALE.title,
-    homepageLayout: c.homepageLayout ?? DEFAULT_GENERAL_FLASH_SALE.homepageLayout,
+    homepageLayout:
+      c.homepageLayout === "featured" ||
+      c.homepageLayout === "grid" ||
+      c.homepageLayout === "banner" ||
+      c.homepageLayout === "rolling"
+        ? c.homepageLayout
+        : DEFAULT_GENERAL_FLASH_SALE.homepageLayout,
     excludeGiftSets: c.excludeGiftSets !== false,
     updatedAt: c.updatedAt,
   };

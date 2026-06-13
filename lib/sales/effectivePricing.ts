@@ -1,4 +1,4 @@
-import { isSaleActive } from "@/lib/products/sale";
+import { hasProductLevelFlashSale } from "@/lib/products/sale";
 import type { ProductVariant } from "@/lib/products/variants";
 import {
   generalSalePrice,
@@ -29,7 +29,7 @@ export function getEffectiveSaleState(
   product: SaleProduct,
   generalSale: GeneralFlashSaleContent | null | undefined
 ): EffectiveSaleState {
-  if (isSaleActive(product)) {
+  if (hasProductLevelFlashSale(product)) {
     return {
       active: true,
       endsAt: product.sale_ends_at ?? null,
@@ -51,6 +51,18 @@ export function getEffectiveSaleState(
   }
 
   return { active: false, endsAt: null, source: null };
+}
+
+/** Countdown end time for product UI — general sale date when site-wide sale applies. */
+export function getSaleCountdownEndsAt(
+  product: SaleProduct,
+  generalSale: GeneralFlashSaleContent | null | undefined
+): string | null {
+  const state = getEffectiveSaleState(product, generalSale);
+  if (!state.active) return null;
+  if (state.endsAt) return state.endsAt;
+  if (state.source === "general" && generalSale?.endsAt) return generalSale.endsAt;
+  return null;
 }
 
 export function effectiveProductUnitPrice(

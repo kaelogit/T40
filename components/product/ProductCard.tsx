@@ -8,7 +8,8 @@ import { ShoppingBag, Check } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useGeneralFlashSale } from "@/context/GeneralFlashSaleContext";
 import { getProductHref } from "@/lib/products/urls";
-import { getEffectiveSaleState } from "@/lib/sales/effectivePricing";
+import { getEffectiveSaleState, getSaleCountdownEndsAt } from "@/lib/sales/effectivePricing";
+import FlashSaleCountdown from "@/components/product/FlashSaleCountdown";
 import { isGiftSetProduct } from "@/lib/products/isGiftSetProduct";
 import { buildCartLinePayload, canAddProductToCart } from "@/lib/products/cartLine";
 import { cardPriceLabel } from "@/lib/products/variants";
@@ -48,7 +49,9 @@ export default function ProductCard({ product, viewMode = "grid", priority = fal
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const generalSale = useGeneralFlashSale();
-  const saleActive = getEffectiveSaleState(product, generalSale).active;
+  const saleState = getEffectiveSaleState(product, generalSale);
+  const saleActive = saleState.active;
+  const saleEndsAt = getSaleCountdownEndsAt(product, generalSale);
 
   const cardPricing = cardPriceLabel(product as import("@/types/product").ProductDetail, generalSale);
   const cardVariant = cardPricing.cardVariant;
@@ -83,7 +86,7 @@ export default function ProductCard({ product, viewMode = "grid", priority = fal
 
       if (!canAdd || isAdding) return;
 
-      const line = buildCartLinePayload(product, { isGiftSet });
+      const line = buildCartLinePayload(product, { isGiftSet, generalSale });
       if (!line) return;
 
       setIsAdding(true);
@@ -118,7 +121,7 @@ export default function ProductCard({ product, viewMode = "grid", priority = fal
         setIsAdding(false);
       }
     },
-    [addToCart, canAdd, isAdding, isGiftSet, mainImage, product]
+    [addToCart, canAdd, isAdding, isGiftSet, mainImage, product, generalSale]
   );
 
   const badges = [];
@@ -190,6 +193,11 @@ export default function ProductCard({ product, viewMode = "grid", priority = fal
                 {formatPrice(currentPrice)}
               </span>
             </div>
+            {saleActive && saleEndsAt && (
+              <div className="mt-2">
+                <FlashSaleCountdown endsAt={saleEndsAt} compact />
+              </div>
+            )}
           </div>
 
           <button
@@ -303,6 +311,12 @@ export default function ProductCard({ product, viewMode = "grid", priority = fal
             {formatPrice(currentPrice)}
           </span>
         </div>
+
+        {saleActive && saleEndsAt && (
+          <div className="mt-1.5">
+            <FlashSaleCountdown endsAt={saleEndsAt} compact />
+          </div>
+        )}
 
         {isOutOfStock && (
           <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d94625] font-heading">

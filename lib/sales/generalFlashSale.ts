@@ -1,4 +1,4 @@
-export type GeneralFlashSaleLayout = "featured" | "grid" | "banner";
+export type GeneralFlashSaleLayout = "featured" | "grid" | "banner" | "rolling";
 
 export type GeneralFlashSaleContent = {
   active: boolean;
@@ -40,6 +40,11 @@ export const GENERAL_FLASH_SALE_LAYOUT_OPTIONS: {
     value: "banner",
     label: "Promo banner",
     description: "Full-width countdown banner with a shop CTA — minimal, high impact.",
+  },
+  {
+    value: "rolling",
+    label: "Rolling banner",
+    description: "Continuous scrolling ticker with sale headline, discount, and countdown.",
   },
 ];
 

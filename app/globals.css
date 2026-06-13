@@ -41,3 +41,16 @@ body {
   0% { transform: scale(1.05); }
   100% { transform: scale(1); }
 }
+
+@keyframes t40-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.t40-marquee-track {
+  animation: t40-marquee 28s linear infinite;
+}
+
+.t40-marquee-track:hover {
+  animation-play-state: paused;
+}
