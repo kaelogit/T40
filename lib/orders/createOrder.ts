@@ -6,15 +6,17 @@ import { computeGiftSetAvailability } from "@/lib/products/giftSetAvailability";
 import {
   lineDisplayName,
   parseLegacyCartLineId,
-  variantCompareAtPrice,
-  variantEffectivePrice,
   mapVariant,
   getDefaultVariant,
   type ProductVariant,
   type VariantRow,
 } from "@/lib/products/variants";
 import { effectiveInStock } from "@/lib/products/stock";
-import { isSaleActive } from "@/lib/products/sale";
+import { getLiveGeneralFlashSale } from "@/lib/content/generalFlashSale";
+import {
+  effectiveProductUnitPrice,
+  effectiveVariantUnitPrice,
+} from "@/lib/sales/effectivePricing";
 import { isUuid } from "@/lib/products/urls";
 import type { CheckoutAddress, CheckoutCartItem, CheckoutCustomer } from "@/types/order";
 
@@ -133,26 +135,9 @@ async function resolveLineItem(item: CheckoutCartItem): Promise<ResolvedLineItem
   return { error: "Invalid product in cart." as const };
 }
 
-function productLevelPrice(
-  product: ResolvedLineItem["product"],
-  onSale: boolean
-): { unitPrice: number; compareAt: number | null } {
-  const base = Number(product.price);
-  const unitPrice =
-    onSale && product.sale_price != null && Number(product.sale_price) > 0
-      ? Number(product.sale_price)
-      : base;
-  const compareAt =
-    onSale && product.sale_price != null && unitPrice < base
-      ? base
-      : unitPrice < base
-        ? base
-        : null;
-  return { unitPrice, compareAt };
-}
-
 export async function validateAndPriceItems(items: CheckoutCartItem[]) {
   const supabase = await getCheckoutDb();
+  const generalSale = await getLiveGeneralFlashSale();
   const priced: CheckoutCartItem[] = [];
   let subtotal = 0;
 
@@ -207,13 +192,11 @@ export async function validateAndPriceItems(items: CheckoutCartItem[]) {
       );
     }
 
-    const onSale = isSaleActive(product);
-    const { unitPrice, compareAt } = variant
-      ? {
-          unitPrice: variantEffectivePrice(variant, onSale),
-          compareAt: variantCompareAtPrice(variant, onSale, variantEffectivePrice(variant, onSale)),
-        }
-      : productLevelPrice(product, onSale);
+    const pricedLine = variant
+      ? effectiveVariantUnitPrice(variant, product, generalSale)
+      : effectiveProductUnitPrice(product, generalSale);
+    const unitPrice = pricedLine.price;
+    const compareAt = pricedLine.compareAt;
 
     const lineTotal = unitPrice * item.quantity;
     subtotal += lineTotal;

@@ -1,4 +1,6 @@
 import { createAdminClient, hasAdminClient } from "@/lib/supabase/admin";
+import { getLiveGeneralFlashSale } from "@/lib/content/generalFlashSale";
+import { calculateCheckoutShipping } from "@/lib/shipping/promotions";
 import { validateCheckout } from "@/lib/validations/checkout";
 import {
   applyCouponToOrder,
@@ -57,6 +59,15 @@ export async function prepareCheckoutIntent(payload: CreateOrderPayload) {
     return { error: couponResult.error };
   }
 
+  const generalSale = await getLiveGeneralFlashSale();
+  const shipping = calculateCheckoutShipping(
+    couponResult.total,
+    payload.address.state,
+    payload.address.country,
+    generalSale
+  );
+  const total = couponResult.total + shipping.fee;
+
   const supabase = createAdminClient();
   const expiresAt = new Date(Date.now() + INTENT_TTL_MS).toISOString();
 
@@ -67,7 +78,7 @@ export async function prepareCheckoutIntent(payload: CreateOrderPayload) {
       address: payload.address,
       priced_items: priced.priced,
       subtotal: priced.subtotal,
-      total: couponResult.total,
+      total,
       discount_amount: couponResult.discountAmount,
       coupon_code: couponResult.couponCode ?? null,
       expires_at: expiresAt,

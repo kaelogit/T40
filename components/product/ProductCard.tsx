@@ -6,8 +6,9 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ShoppingBag, Check } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useGeneralFlashSale } from "@/context/GeneralFlashSaleContext";
 import { getProductHref } from "@/lib/products/urls";
-import { isSaleActive } from "@/lib/products/sale";
+import { getEffectiveSaleState } from "@/lib/sales/effectivePricing";
 import { isGiftSetProduct } from "@/lib/products/isGiftSetProduct";
 import { buildCartLinePayload, canAddProductToCart } from "@/lib/products/cartLine";
 import { cardPriceLabel } from "@/lib/products/variants";
@@ -46,9 +47,10 @@ export default function ProductCard({ product, viewMode = "grid", priority = fal
   const [isAdding, setIsAdding] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  const saleActive = isSaleActive(product);
+  const generalSale = useGeneralFlashSale();
+  const saleActive = getEffectiveSaleState(product, generalSale).active;
 
-  const cardPricing = cardPriceLabel(product as import("@/types/product").ProductDetail);
+  const cardPricing = cardPriceLabel(product as import("@/types/product").ProductDetail, generalSale);
   const cardVariant = cardPricing.cardVariant;
   const mainImage = product.images?.[0] || "/placeholder.jpg";
   const hoverImage = product.images?.[1] || null;

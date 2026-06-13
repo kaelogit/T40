@@ -1,5 +1,11 @@
 import type { ProductDetail } from "@/types/product";
 import { isSaleActive } from "@/lib/products/sale";
+import type { GeneralFlashSaleContent } from "@/lib/sales/generalFlashSale";
+import {
+  effectiveProductUnitPrice,
+  effectiveVariantUnitPrice,
+  getEffectiveSaleState,
+} from "@/lib/sales/effectivePricing";
 
 export type ProductVariant = {
   id: string;
@@ -100,19 +106,38 @@ export function getCardVariant(variants: ProductVariant[]): ProductVariant | nul
 
 export function variantEffectivePrice(
   variant: ProductVariant,
-  productOnSale: boolean
+  productOnSale: boolean,
+  generalSale?: GeneralFlashSaleContent | null,
+  product?: SaleProductForPricing
 ): number {
+  if (generalSale && product) {
+    return effectiveVariantUnitPrice(variant, product, generalSale).price;
+  }
   if (productOnSale && variant.sale_price != null && variant.sale_price > 0) {
     return variant.sale_price;
   }
   return variant.price;
 }
 
+type SaleProductForPricing = {
+  price: number;
+  sale_price?: number | null;
+  on_sale?: boolean | null;
+  sale_ends_at?: string | null;
+  category?: string | null;
+  product_type?: string | null;
+};
+
 export function variantCompareAtPrice(
   variant: ProductVariant,
   productOnSale: boolean,
-  effectivePrice: number
+  effectivePrice: number,
+  generalSale?: GeneralFlashSaleContent | null,
+  product?: SaleProductForPricing
 ): number | null {
+  if (generalSale && product) {
+    return effectiveVariantUnitPrice(variant, product, generalSale).compareAt;
+  }
   if (productOnSale && variant.sale_price != null && variant.sale_price > 0 && effectivePrice < variant.price) {
     return variant.price;
   }
@@ -149,25 +174,33 @@ export function hasMultipleSizes(variants: ProductVariant[]): boolean {
   return active.length > 1;
 }
 
-export function cardPriceLabel(product: ProductDetail): {
+export function cardPriceLabel(
+  product: ProductDetail,
+  generalSale?: GeneralFlashSaleContent | null
+): {
   price: number;
   compareAt: number | null;
   mlPrefix: string | null;
   cardVariant: ProductVariant | null;
 } {
   const variants = getActiveVariants(product);
-  const onSale = isSaleActive(product);
+  const onSale = generalSale
+    ? getEffectiveSaleState(product, generalSale).active
+    : isSaleActive(product);
 
   const cardVariant = variants.length ? getCardVariant(variants) : null;
 
   if (!cardVariant) {
-    const price =
-      onSale && product.sale_price ? product.sale_price : product.price;
+    if (generalSale) {
+      const { price, compareAt } = effectiveProductUnitPrice(product, generalSale);
+      return { price, compareAt, mlPrefix: null, cardVariant: null };
+    }
+    const price = onSale && product.sale_price ? product.sale_price : product.price;
     return { price, compareAt: null, mlPrefix: null, cardVariant: null };
   }
 
-  const price = variantEffectivePrice(cardVariant, onSale);
-  const compareAt = variantCompareAtPrice(cardVariant, onSale, price);
+  const price = variantEffectivePrice(cardVariant, onSale, generalSale, product);
+  const compareAt = variantCompareAtPrice(cardVariant, onSale, price, generalSale, product);
 
   return {
     price,

@@ -14,6 +14,7 @@ import { Button } from "../ui/Button";
 import { useBrandOptions } from "@/hooks/useBrandOptions";
 import { useScentOptions } from "@/hooks/useScentOptions";
 import { useShopFilters } from "@/hooks/useShopFilters";
+import { useGeneralFlashSale } from "@/context/GeneralFlashSaleContext";
 import { applyShopFilters, applyShopFiltersToQuery } from "@/lib/shop/buildProductQuery";
 import { isFeaturedSort } from "@/lib/shop/sortOptions";
 import { shuffleWithSeed } from "@/lib/shop/shuffle";
@@ -30,6 +31,7 @@ export default function ProductGrid({ viewMode = "grid", onCountChange }: Props)
   const router = useRouter();
   const searchParams = useSearchParams();
   const filters = useShopFilters();
+  const generalSale = useGeneralFlashSale();
   const randomSeed = searchParams.get("seed") ?? "featured";
   const { slugToName: brandSlugToName } = useBrandOptions();
   const { options: scentOptions } = useScentOptions();
@@ -49,8 +51,13 @@ export default function ProductGrid({ viewMode = "grid", onCountChange }: Props)
   }, []);
 
   const filtersWithT40 = useMemo(
-    () => ({ ...filters, t40SubcategorySlugs, allScentSlugs }),
-    [filters, t40SubcategorySlugs, allScentSlugs]
+    () => ({
+      ...filters,
+      t40SubcategorySlugs,
+      allScentSlugs,
+      generalFlashSaleActive: Boolean(generalSale),
+    }),
+    [filters, t40SubcategorySlugs, allScentSlugs, generalSale]
   );
 
   const filtersKey = JSON.stringify({ filters: filtersWithT40, brandSlugToName, randomSeed });

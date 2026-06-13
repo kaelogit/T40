@@ -2,6 +2,8 @@ import type { ProductDetail } from "@/types/product";
 import { isSaleActive } from "@/lib/products/sale";
 import { isGiftSetProduct } from "@/lib/products/isGiftSetProduct";
 import { effectiveInStock } from "@/lib/products/stock";
+import type { GeneralFlashSaleContent } from "@/lib/sales/generalFlashSale";
+import { getEffectiveSaleState, effectiveProductUnitPrice } from "@/lib/sales/effectivePricing";
 import {
   getActiveVariants,
   getCardVariant,
@@ -33,11 +35,14 @@ export type CartLinePayload = {
 
 export function buildCartLinePayload(
   product: CartProduct,
-  options?: { isGiftSet?: boolean }
+  options?: { isGiftSet?: boolean; generalSale?: GeneralFlashSaleContent | null }
 ): CartLinePayload | null {
   if (!product.id) return null;
 
-  const saleActive = isSaleActive(product);
+  const generalSale = options?.generalSale ?? null;
+  const saleActive = generalSale
+    ? getEffectiveSaleState(product, generalSale).active
+    : isSaleActive(product);
   const isGiftSet = options?.isGiftSet ?? isGiftSetProduct(product);
   const variants = getActiveVariants(product);
   const variant = variants.length
@@ -45,8 +50,8 @@ export function buildCartLinePayload(
     : null;
 
   if (variant) {
-    const price = variantEffectivePrice(variant, saleActive);
-    const compareAt = variantCompareAtPrice(variant, saleActive, price);
+    const price = variantEffectivePrice(variant, saleActive, generalSale, product);
+    const compareAt = variantCompareAtPrice(variant, saleActive, price, generalSale, product);
     return {
       id: variant.id,
       variantId: variant.id,
@@ -60,6 +65,19 @@ export function buildCartLinePayload(
 
   const price = Number(product.price);
   if (!Number.isFinite(price) || price <= 0) return null;
+
+  if (generalSale) {
+    const { price: unitPrice, compareAt } = effectiveProductUnitPrice(product, generalSale);
+    const legacyKey = isGiftSet ? "Gift set" : "default";
+    return {
+      id: `${product.id}::${legacyKey}`,
+      productId: product.id,
+      name: product.name,
+      price: unitPrice,
+      compareAtPrice: compareAt ?? undefined,
+      size: isGiftSet ? "Gift set" : undefined,
+    };
+  }
 
   const unitPrice = saleActive && product.sale_price ? product.sale_price : price;
   const compareAtPrice =

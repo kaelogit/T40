@@ -1,20 +1,24 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AnnouncementBarWrapper from "@/components/layout/AnnouncementBarWrapper";
+import { getLiveGeneralFlashSale } from "@/lib/content/generalFlashSale";
+import { GeneralFlashSaleProvider } from "@/context/GeneralFlashSaleContext";
 
-export default function StoreLayout({
+export default async function StoreLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const generalFlashSale = await getLiveGeneralFlashSale();
+
   return (
-    <>
+    <GeneralFlashSaleProvider config={generalFlashSale}>
       <div id="site-header" className="sticky top-0 z-50">
         <AnnouncementBarWrapper />
         <Navbar />
       </div>
       <main className="flex-grow">{children}</main>
       <Footer />
-    </>
+    </GeneralFlashSaleProvider>
   );
 }

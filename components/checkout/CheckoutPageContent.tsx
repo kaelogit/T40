@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useGeneralFlashSale } from "@/context/GeneralFlashSaleContext";
+import { calculateCheckoutShipping } from "@/lib/shipping/promotions";
 import type { CheckoutAddress, CheckoutCustomer } from "@/types/order";
 import GuestForm from "./GuestForm";
 import ShippingForm from "./ShippingForm";
@@ -35,6 +37,7 @@ export default function CheckoutPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { cart, cartTotal } = useCart();
+  const generalSale = useGeneralFlashSale();
 
   const [step, setStep] = useState(0);
   const [customer, setCustomer] = useState<CheckoutCustomer>(emptyCustomer);
@@ -46,7 +49,14 @@ export default function CheckoutPageContent() {
 
   const cancelled = searchParams.get("cancelled");
   const discount = appliedCoupon?.discountAmount ?? 0;
-  const orderTotal = Math.max(0, cartTotal - discount);
+  const orderSubtotal = Math.max(0, cartTotal - discount);
+  const shipping = calculateCheckoutShipping(
+    orderSubtotal,
+    address.state,
+    address.country,
+    generalSale
+  );
+  const orderTotal = orderSubtotal + shipping.fee;
 
   useEffect(() => {
     if (cart.length === 0 && !redirectingToPayment) {
@@ -257,6 +267,8 @@ export default function CheckoutPageContent() {
               discount={discount}
               couponCode={appliedCoupon?.code}
               total={orderTotal}
+              shippingFee={shipping.fee}
+              shippingLabel={shipping.label}
               state={address.state}
               country={address.country}
             />

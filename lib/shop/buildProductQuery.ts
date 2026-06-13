@@ -39,6 +39,8 @@ export type ShopQueryFilters = ShopPathFilters & {
   t40SubcategorySlugs?: string[];
   /** All scent slugs for `/shop/scent` hub filtering */
   allScentSlugs?: string[];
+  /** When a site-wide flash sale is live, flash-sales collection shows all eligible products */
+  generalFlashSaleActive?: boolean;
 };
 
 function getPathFilters(pathname: string): ShopPathFilters {
@@ -147,8 +149,12 @@ export function applyShopFiltersToQuery(
 
   const collection = filters.collection;
   if (collection === FLASH_SALE_COLLECTION_SLUG) {
-    const now = new Date().toISOString();
-    q = q.eq("on_sale", true).or(activeSaleOrFilter(now));
+    if (filters.generalFlashSaleActive) {
+      q = q.eq("in_stock", true).neq("category", "gift-sets").neq("product_type", "gift_set");
+    } else {
+      const now = new Date().toISOString();
+      q = q.eq("on_sale", true).or(activeSaleOrFilter(now));
+    }
   } else if (collection) {
     const badge = COLLECTION_TO_BADGE[collection];
     const cat = COLLECTION_TO_CATEGORY[collection];

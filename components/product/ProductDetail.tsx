@@ -4,10 +4,11 @@ import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Check, ShoppingBag, ChevronRight, Gift } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useGeneralFlashSale } from "@/context/GeneralFlashSaleContext";
 import { cartLineId, formatPrice } from "@/lib/products/pricing";
 import { buildCartLinePayload } from "@/lib/products/cartLine";
 import type { ProductDetail as ProductDetailType, VolumeOption } from "@/types/product";
-import { isSaleActive } from "@/lib/products/sale";
+import { getEffectiveSaleState, effectiveProductUnitPrice, effectiveVariantUnitPrice } from "@/lib/sales/effectivePricing";
 import ProductImages from "./ProductImages";
 import VolumeSelector from "./VolumeSelector";
 import StockBadge from "./StockBadge";
@@ -42,6 +43,7 @@ type Props = {
 
 export default function ProductDetail({ product, relatedProducts }: Props) {
   const { addToCart } = useCart();
+  const generalSale = useGeneralFlashSale();
   const activeVariants = useMemo(() => getActiveVariants(product), [product]);
   const cardVariant = useMemo(
     () => getCardVariant(activeVariants) ?? product.defaultVariant ?? null,
@@ -56,7 +58,9 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
     [activeVariants, selectedVariantId, cardVariant]
   );
 
-  const onSale = isSaleActive(product);
+  const saleState = getEffectiveSaleState(product, generalSale);
+  const onSale = saleState.active;
+  const saleEndsAt = saleState.endsAt;
 
   const isGiftSet =
     product.product_type === "gift_set" ||
@@ -64,14 +68,14 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
     (product.bundleItems?.length ?? 0) > 0;
 
   const displayPrice = useMemo(() => {
-    if (!selectedVariant) return product.price;
-    return variantEffectivePrice(selectedVariant, onSale);
-  }, [selectedVariant, onSale, product.price]);
+    if (!selectedVariant) return effectiveProductUnitPrice(product, generalSale).price;
+    return effectiveVariantUnitPrice(selectedVariant, product, generalSale).price;
+  }, [selectedVariant, generalSale, product]);
 
   const displayCompare = useMemo(() => {
-    if (!selectedVariant) return null;
-    return variantCompareAtPrice(selectedVariant, onSale, displayPrice);
-  }, [selectedVariant, onSale, displayPrice]);
+    if (!selectedVariant) return effectiveProductUnitPrice(product, generalSale).compareAt;
+    return effectiveVariantUnitPrice(selectedVariant, product, generalSale).compareAt;
+  }, [selectedVariant, generalSale, product]);
 
   const discount =
     displayCompare && displayCompare > displayPrice
@@ -80,14 +84,17 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
 
   const volumeOptions: VolumeOption[] = useMemo(
     () =>
-      activeVariants.map((v) => ({
-        variantId: v.id,
-        size: v.label || v.id,
-        label: v.label.trim() || "Standard",
-        price: variantEffectivePrice(v, onSale),
-        compareAt: variantCompareAtPrice(v, onSale, variantEffectivePrice(v, onSale)),
-      })),
-    [activeVariants, onSale]
+      activeVariants.map((v) => {
+        const priced = effectiveVariantUnitPrice(v, product, generalSale);
+        return {
+          variantId: v.id,
+          size: v.label || v.id,
+          label: v.label.trim() || "Standard",
+          price: priced.price,
+          compareAt: priced.compareAt,
+        };
+      }),
+    [activeVariants, generalSale, product]
   );
 
   const showSizeSelector = !isGiftSet && hasMultipleSizes(activeVariants);
@@ -152,7 +159,7 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
               displayCompare && displayCompare > displayPrice ? displayCompare : undefined,
             size: isGiftSet ? "Gift set" : selectedVariant.label.trim() || undefined,
           }
-        : buildCartLinePayload(product, { isGiftSet });
+        : buildCartLinePayload(product, { isGiftSet, generalSale });
 
     if (!line) return;
 
@@ -254,9 +261,9 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
               )}
             </div>
 
-            {onSale && product.sale_ends_at && !isGiftSet && (
+            {onSale && saleEndsAt && !isGiftSet && (
               <div className="mt-4">
-                <FlashSaleCountdown endsAt={product.sale_ends_at} />
+                <FlashSaleCountdown endsAt={saleEndsAt} />
               </div>
             )}
 

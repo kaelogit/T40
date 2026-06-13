@@ -14,6 +14,8 @@ type Props = {
   discount?: number;
   couponCode?: string | null;
   total: number;
+  shippingFee?: number;
+  shippingLabel?: string;
   state?: string;
   country?: string;
 };
@@ -24,6 +26,8 @@ export default function OrderSummary({
   discount = 0,
   couponCode,
   total,
+  shippingFee = 0,
+  shippingLabel = "Delivery",
   state,
   country,
 }: Props) {
@@ -85,6 +89,12 @@ export default function OrderSummary({
             <span>−{formatPrice(discount)}</span>
           </div>
         )}
+        {shippingFee > 0 && (
+          <div className="flex justify-between text-[11px] uppercase tracking-widest text-t40-grey">
+            <span>{shippingLabel}</span>
+            <span>{formatPrice(shippingFee)}</span>
+          </div>
+        )}
         <div className="flex justify-between pt-2">
           <span className="text-xs font-bold uppercase tracking-widest text-t40-black">
             Total
@@ -92,7 +102,12 @@ export default function OrderSummary({
           <span className="text-lg font-black text-t40-black">{formatPrice(total)}</span>
         </div>
         <div className="pt-3">
-          <LagosFreeShippingNote subtotal={total} state={state} country={country} />
+          <LagosFreeShippingNote
+            subtotal={Math.max(0, subtotal - discount)}
+            state={state}
+            country={country}
+            shippingFee={shippingFee}
+          />
         </div>
       </div>
     </div>

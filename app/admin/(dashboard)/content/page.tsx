@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Megaphone, FileText, HelpCircle, Info, Mail, CalendarDays } from "lucide-react";
+import { Megaphone, FileText, HelpCircle, Info, Mail, CalendarDays, Percent } from "lucide-react";
 
 const SECTIONS = [
   {
@@ -7,6 +7,12 @@ const SECTIONS = [
     label: "Announcement bar",
     description: "Top banner message and quick links on every page",
     icon: Megaphone,
+  },
+  {
+    href: "/admin/content/general-flash-sale",
+    label: "General flash sale",
+    description: "Site-wide percent off, end date, headline, and homepage layout",
+    icon: Percent,
   },
   {
     href: "/admin/content/events",
