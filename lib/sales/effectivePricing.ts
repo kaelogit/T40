@@ -17,8 +17,8 @@ export type EffectiveSaleState = {
 };
 
 type SaleProduct = {
-  price: number;
-  sale_price?: number | null;
+  price: number | string;
+  sale_price?: number | string | null;
   on_sale?: boolean | null;
   sale_ends_at?: string | null;
   category?: string | null;

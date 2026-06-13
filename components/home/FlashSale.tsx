@@ -21,6 +21,7 @@ import { isProductEligibleForGeneralSale } from "@/lib/sales/generalFlashSale";
 import { generalSaleShippingSummary } from "@/lib/shipping/promotions";
 import FlashSaleCountdown from "@/components/product/FlashSaleCountdown";
 import type { ProductDetail } from "@/types/product";
+import type { Tables } from "@/types/database";
 import type { GeneralFlashSaleLayout } from "@/lib/sales/generalFlashSale";
 
 const supabase = createClient();
@@ -299,7 +300,7 @@ export default function FlashSale() {
       // Client-side expiry filter still applies
     }
 
-    let rows: Record<string, unknown>[] = [];
+    let rows: Tables<"products">[] = [];
 
     if (generalSale) {
       let query = supabase.from("products").select("*").eq("in_stock", true).order("badge", { ascending: true }).limit(8);
