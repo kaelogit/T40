@@ -3,6 +3,7 @@ import { requireAdminApi } from "@/lib/admin/apiAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { brandToSlug } from "@/lib/shop/brands";
 import { getGiftSetItemIds, syncGiftSetItems, getGiftSetsContainingProduct, formatGiftSetDeleteBlockMessage } from "@/lib/products/giftSets";
+import { ensureScentByName, getProductScentSlugs, syncProductScents } from "@/lib/products/productScents";
 import { pruneT40SubcategoryAfterProductChange, pruneT40SubcategoryIfUnused } from "@/lib/catalog/subcategories";
 import { syncProductVariants } from "@/lib/products/variants.admin";
 import { mapDbVariants } from "@/lib/products/variants";
@@ -31,6 +32,11 @@ export async function GET(_request: Request, { params }: Props) {
       ? await getGiftSetItemIds(id)
       : [];
 
+  const scentSlugs =
+    data.category === "gift-sets" || data.product_type === "gift_set"
+      ? []
+      : await getProductScentSlugs(supabase, id);
+
   const { data: variants } = await supabase
     .from("product_variants")
     .select("*")
@@ -40,7 +46,7 @@ export async function GET(_request: Request, { params }: Props) {
 
   return NextResponse.json({
     product: data,
-    form: rowToProductFormWithGiftIds(data, giftSetProductIds, mapDbVariants(variants ?? [])),
+    form: rowToProductFormWithGiftIds(data, giftSetProductIds, mapDbVariants(variants ?? []), scentSlugs),
   });
 }
 
@@ -51,7 +57,10 @@ export async function PATCH(request: Request, { params }: Props) {
   const { id } = await params;
 
   try {
-    const body = (await request.json()) as ProductFormInput & { newBrandName?: string };
+    const body = (await request.json()) as ProductFormInput & {
+      newBrandName?: string;
+      newScentName?: string;
+    };
     const validationError = validateProductForm(body);
     if (validationError) {
       return NextResponse.json({ error: validationError }, { status: 400 });
@@ -101,6 +110,21 @@ export async function PATCH(request: Request, { params }: Props) {
     }
 
     await syncProductVariants(id, body.variants, { onSale: body.flash_sale });
+
+    if (body.category !== "gift-sets") {
+      try {
+        let scentSlugs = [...(body.scentSlugs ?? [])];
+        if (body.newScentName?.trim()) {
+          const slug = await ensureScentByName(supabase, body.newScentName.trim());
+          if (!scentSlugs.includes(slug)) scentSlugs.push(slug);
+        }
+        await syncProductScents(supabase, id, scentSlugs);
+      } catch (syncError) {
+        const message =
+          syncError instanceof Error ? syncError.message : "Failed to save scent profiles.";
+        return NextResponse.json({ error: message }, { status: 500 });
+      }
+    }
 
     try {
       await pruneT40SubcategoryAfterProductChange(

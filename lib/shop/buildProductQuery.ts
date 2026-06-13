@@ -37,6 +37,8 @@ export type ShopQueryFilters = ShopPathFilters & {
   sort?: string;
   /** Loaded from categories — used for T40 Exclusives shop view */
   t40SubcategorySlugs?: string[];
+  /** All scent slugs for `/shop/scent` hub filtering */
+  allScentSlugs?: string[];
 };
 
 function getPathFilters(pathname: string): ShopPathFilters {
@@ -168,7 +170,7 @@ export function applyShopFiltersToQuery(
   }
 
   if (filters.scentHub) {
-    const orString = orFilterForAllScents();
+    const orString = orFilterForAllScents(filters.allScentSlugs);
     if (orString) q = q.or(orString);
   } else {
     const scentSlugs = [

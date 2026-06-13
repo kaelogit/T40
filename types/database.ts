@@ -185,6 +185,38 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["brands"]["Insert"]>;
         Relationships: [];
       };
+      scents: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["scents"]["Insert"]>;
+        Relationships: [];
+      };
+      product_scents: {
+        Row: {
+          product_id: string;
+          scent_id: string;
+        };
+        Insert: {
+          product_id: string;
+          scent_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["product_scents"]["Insert"]>;
+        Relationships: [];
+      };
       orders: {
         Row: {
           id: string;

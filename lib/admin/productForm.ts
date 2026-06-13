@@ -1,8 +1,8 @@
-import { SCENT_FILTER_OPTIONS } from "@/lib/shop/scents";
 import {
   PRODUCT_CATEGORY_OPTIONS,
   categoryHasSubcategories,
 } from "@/lib/catalog/productCategories";
+import { DEFAULT_SCENT_FILTER_OPTIONS, scentSlugsToNotes } from "@/lib/shop/scents";
 import type { ProductVariant, VariantFormInput, PricingMode } from "@/lib/products/variants";
 
 export { PRODUCT_CATEGORY_OPTIONS, categoryHasSubcategories };
@@ -23,7 +23,7 @@ export const OCCASION_OPTIONS = [
   { label: "Date Night", value: "date" },
 ] as const;
 
-export const SCENT_OPTIONS = SCENT_FILTER_OPTIONS;
+export const SCENT_OPTIONS = DEFAULT_SCENT_FILTER_OPTIONS;
 
 /** House brand stored on gift set rows — not chosen in admin. */
 export const GIFT_SET_DEFAULT_BRAND = "T40 Perfumes";
@@ -39,7 +39,7 @@ export type ProductFormInput = {
   brand: string;
   category: string;
   subcategory: string | null;
-  scentSlug: string;
+  scentSlugs: string[];
   occasion: string | null;
   description: string | null;
   pricingMode: PricingMode;
@@ -60,6 +60,7 @@ export function scentSlugToNotes(slug: string): string {
   return slug.trim().replace(/-/g, " ");
 }
 
+/** @deprecated use notesToScentSlug from lib/shop/scents */
 export function notesToScentSlug(notes: string | null | undefined): string {
   if (!notes?.trim()) return "";
   return notes.trim().toLowerCase().replace(/\s+/g, "-");
@@ -133,7 +134,7 @@ export function productFormToRow(input: ProductFormInput) {
     category: input.category,
     subcategory: isGiftSet ? "gift-sets" : input.subcategory?.trim() || null,
     product_type: isGiftSet ? "gift_set" : "single",
-    notes: isGiftSet ? null : input.scentSlug ? scentSlugToNotes(input.scentSlug) : null,
+    notes: isGiftSet ? null : scentSlugsToNotes(input.scentSlugs),
     occasion: isGiftSet ? null : input.occasion || null,
     price: defaultVariant?.price ?? 0,
     description: input.description?.trim() || null,
@@ -155,7 +156,9 @@ export function productFormToRow(input: ProductFormInput) {
   };
 }
 
-export function getProductFormErrors(input: ProductFormInput): string[] {
+export function getProductFormErrors(
+  input: ProductFormInput & { newScentName?: string }
+): string[] {
   const errors: string[] = [];
   const isGiftSet = input.category === "gift-sets";
 
@@ -188,7 +191,9 @@ export function getProductFormErrors(input: ProductFormInput): string[] {
       errors.push("Gift sets must include at least 2 perfumes.");
     }
   } else {
-    if (!input.scentSlug?.trim()) errors.push("Scent profile is required.");
+    if (!input.scentSlugs?.length && !input.newScentName?.trim()) {
+      errors.push("Select at least one scent profile.");
+    }
     if (!input.occasion?.trim()) errors.push("Occasion is required.");
   }
 
@@ -257,7 +262,10 @@ export function validateProductForm(input: ProductFormInput): string | null {
   return errors[0] ?? null;
 }
 
-export function rowToProductForm(row: Record<string, unknown>): ProductFormInput {
+export function rowToProductForm(
+  row: Record<string, unknown>,
+  scentSlugs: string[] = []
+): ProductFormInput {
   const placement = derivePlacementFromProduct({
     badge: row.badge as string | null,
     is_new_arrival: row.is_new_arrival as boolean | null,
@@ -276,7 +284,12 @@ export function rowToProductForm(row: Record<string, unknown>): ProductFormInput
     brand: (row.brand as string) ?? "",
     category: (row.category as string) ?? "unisex",
     subcategory: (row.subcategory as string | null) ?? null,
-    scentSlug: notesToScentSlug(row.notes as string),
+    scentSlugs:
+      scentSlugs.length > 0
+        ? scentSlugs
+        : notesToScentSlug(row.notes as string)
+          ? [notesToScentSlug(row.notes as string)]
+          : [],
     occasion: (row.occasion as string | null) ?? null,
     description: (row.description as string | null) ?? null,
     pricingMode: "single",
@@ -304,9 +317,10 @@ export function rowToProductForm(row: Record<string, unknown>): ProductFormInput
 export function rowToProductFormWithGiftIds(
   row: Record<string, unknown>,
   giftSetProductIds: string[],
-  dbVariants?: ProductVariant[]
+  dbVariants?: ProductVariant[],
+  scentSlugs: string[] = []
 ): ProductFormInput {
-  const base = rowToProductForm(row);
+  const base = rowToProductForm(row, scentSlugs);
   const isGiftSet = row.category === "gift-sets" || row.product_type === "gift_set";
 
   if (!dbVariants?.length) {

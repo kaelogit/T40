@@ -12,6 +12,7 @@ import type { Tables } from "@/types/database";
 import { Skeleton } from "../ui/Skeleton";
 import { Button } from "../ui/Button";
 import { useBrandOptions } from "@/hooks/useBrandOptions";
+import { useScentOptions } from "@/hooks/useScentOptions";
 import { useShopFilters } from "@/hooks/useShopFilters";
 import { applyShopFilters, applyShopFiltersToQuery } from "@/lib/shop/buildProductQuery";
 import { isFeaturedSort } from "@/lib/shop/sortOptions";
@@ -31,6 +32,8 @@ export default function ProductGrid({ viewMode = "grid", onCountChange }: Props)
   const filters = useShopFilters();
   const randomSeed = searchParams.get("seed") ?? "featured";
   const { slugToName: brandSlugToName } = useBrandOptions();
+  const { options: scentOptions } = useScentOptions();
+  const allScentSlugs = useMemo(() => scentOptions.map((s) => s.value), [scentOptions]);
   const [t40SubcategorySlugs, setT40SubcategorySlugs] = useState<string[]>([]);
 
   useEffect(() => {
@@ -46,8 +49,8 @@ export default function ProductGrid({ viewMode = "grid", onCountChange }: Props)
   }, []);
 
   const filtersWithT40 = useMemo(
-    () => ({ ...filters, t40SubcategorySlugs }),
-    [filters, t40SubcategorySlugs]
+    () => ({ ...filters, t40SubcategorySlugs, allScentSlugs }),
+    [filters, t40SubcategorySlugs, allScentSlugs]
   );
 
   const filtersKey = JSON.stringify({ filters: filtersWithT40, brandSlugToName, randomSeed });

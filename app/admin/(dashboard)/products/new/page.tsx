@@ -11,7 +11,7 @@ const giftSetInitial: Partial<ProductFormInput> = {
   pricingMode: "single",
   placement: "none",
   flash_sale: false,
-  scentSlug: "",
+  scentSlugs: [],
   occasion: null,
   giftSetProductIds: [],
   variants: [

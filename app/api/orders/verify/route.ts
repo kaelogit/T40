@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { hasAdminClient } from "@/lib/supabase/admin";
 import { verifyPaystackTransaction } from "@/lib/paystack";
-import { getStripe } from "@/lib/stripe";
-import { fulfillCheckoutIntent } from "@/lib/orders/checkoutIntent";
+import { verifyStripeCheckoutSession } from "@/lib/stripe";
+import { fulfillCheckoutIntent, getCheckoutIntent } from "@/lib/orders/checkoutIntent";
 import { markOrderPaid } from "@/lib/orders/markOrderPaid";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -57,17 +57,11 @@ export async function GET(request: Request) {
     }
 
     if (provider === "stripe" && sessionId) {
-      const stripe = getStripe();
-      if (stripe) {
-        const session = await stripe.checkout.sessions.retrieve(sessionId);
-        if (session.payment_status === "paid") {
-          const intentId = session.metadata?.checkout_intent_id;
-          if (intentId) {
-            await fulfillCheckoutIntent(intentId, sessionId);
-          } else {
-            await markOrderPaid(orderId, sessionId);
-          }
-        }
+      const verified = await verifyStripeCheckoutSession(sessionId);
+      if (verified.ok && verified.checkoutIntentId) {
+        await fulfillCheckoutIntent(verified.checkoutIntentId, verified.sessionId);
+      } else if (verified.ok) {
+        await markOrderPaid(orderId, sessionId);
       }
     }
 
@@ -86,19 +80,25 @@ export async function GET(request: Request) {
 
   let paymentVerified = false;
 
+  const intent = await getCheckoutIntent(checkoutIntentId);
+  const expectedTotal = intent ? Number(intent.total) : undefined;
+
   if (provider === "paystack" && reference) {
     const verified = await verifyPaystackTransaction(reference);
-    paymentVerified = verified.ok && verified.checkoutIntentId === checkoutIntentId;
+    paymentVerified =
+      verified.ok &&
+      verified.checkoutIntentId === checkoutIntentId &&
+      (expectedTotal == null ||
+        verified.amount == null ||
+        Math.abs(verified.amount - expectedTotal) <= 1);
   }
 
   if (provider === "stripe" && sessionId) {
-    const stripe = getStripe();
-    if (stripe) {
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
-      paymentVerified =
-        session.payment_status === "paid" &&
-        session.metadata?.checkout_intent_id === checkoutIntentId;
-    }
+    const verified = await verifyStripeCheckoutSession(sessionId, {
+      expectedIntentId: checkoutIntentId,
+      expectedTotalNgn: expectedTotal,
+    });
+    paymentVerified = verified.ok;
   }
 
   if (paymentVerified) {

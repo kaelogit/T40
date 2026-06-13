@@ -8,7 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 import { loadFilterGroups, type FilterGroupConfig } from "@/lib/shop/loadFilterOptions";
 import { parseShopSlug, shopPathFromFilters } from "@/lib/shop/resolveShopPath";
 import { T40_ACCENT, T40_PARENT_SLUG } from "@/lib/shop/t40Exclusives";
-import { SCENT_FILTER_OPTIONS } from "@/lib/shop/scents";
+import { useScentOptions } from "@/hooks/useScentOptions";
+import { DEFAULT_SCENT_FILTER_OPTIONS } from "@/lib/shop/scents";
 
 type T40Subcategory = { name: string; slug: string };
 
@@ -49,6 +50,9 @@ export default function FilterSidebar({
   const [pending, setPending] = useState<Record<string, string[]>>({});
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const sidebarRef = useRef<HTMLElement>(null);
+  const { options: scentOptions } = useScentOptions();
+  const scentFilterOptions =
+    scentOptions.length > 0 ? scentOptions : DEFAULT_SCENT_FILTER_OPTIONS;
 
   useEffect(() => {
     loadFilterGroups(supabase).then((groups) => {
@@ -400,7 +404,7 @@ export default function FilterSidebar({
                     All scent families
                   </span>
                 </button>
-                {SCENT_FILTER_OPTIONS.map((opt) => {
+                {scentFilterOptions.map((opt) => {
                   const isActive = activeScent === opt.value;
                   return (
                     <button

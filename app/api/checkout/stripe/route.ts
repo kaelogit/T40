@@ -39,6 +39,7 @@ export async function POST(request: Request) {
         quantity: item.quantity,
         image: item.image,
       })),
+      totalAmountNgn: Number(intent.total),
       successUrl: `${siteUrl}/order-confirmation/${prepared.intentId}?provider=stripe&session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${siteUrl}/checkout?cancelled=1`,
     });

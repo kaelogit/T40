@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
-import { getSocialLinks } from "@/lib/site/social";
+import FooterSocialLinks from "@/components/layout/FooterSocialLinks";
 import { SHOP_COLLECTIONS, shopCollectionHref } from "@/lib/shop/collections";
 
 const SHOP_LINKS = [
@@ -29,23 +29,8 @@ const COMPANY_LINKS = [
   { label: "Privacy Policy", href: "/privacy" },
 ];
 
-const SOCIAL_ABBR: Record<string, string> = {
-  Instagram: "IG",
-  TikTok: "TT",
-  X: "X",
-};
-
-function SocialIcon({ label }: { label: string }) {
-  return (
-    <span className="text-[10px] font-black font-heading leading-none">
-      {SOCIAL_ABBR[label] ?? label.charAt(0)}
-    </span>
-  );
-}
-
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-  const socialLinks = getSocialLinks();
 
   return (
     <footer className="w-full bg-t40-black text-t40-white">
@@ -69,22 +54,7 @@ export default function Footer() {
               Luxury fragrances for everyday wear. Hand-picked scents, house-made exclusives, and
               delivery across Nigeria.
             </p>
-            {socialLinks.length > 0 && (
-              <div className="flex items-center gap-3 pt-1">
-                {socialLinks.map((link) => (
-                  <a
-                    key={link.label}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={link.label}
-                    className="flex h-10 w-10 items-center justify-center border border-t40-white/15 text-t40-white/70 hover:border-[#d94625] hover:text-[#d94625] transition-colors"
-                  >
-                    <SocialIcon label={link.label} />
-                  </a>
-                ))}
-              </div>
-            )}
+            <FooterSocialLinks />
           </div>
 
           <div className="lg:col-span-7">

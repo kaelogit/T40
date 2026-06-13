@@ -5,7 +5,7 @@ import {
   verifyPaystackWebhookSignature,
   type PaystackWebhookEvent,
 } from "@/lib/paystack";
-import { fulfillCheckoutIntent } from "@/lib/orders/checkoutIntent";
+import { fulfillCheckoutIntent, getCheckoutIntent } from "@/lib/orders/checkoutIntent";
 
 export async function POST(request: Request) {
   const secret = process.env.PAYSTACK_SECRET_KEY;
@@ -43,6 +43,15 @@ export async function POST(request: Request) {
 
   if (!hasAdminClient()) {
     return NextResponse.json({ error: "Not configured" }, { status: 500 });
+  }
+
+  const intent = await getCheckoutIntent(verified.checkoutIntentId);
+  if (
+    intent &&
+    verified.amount != null &&
+    Math.abs(verified.amount - Number(intent.total)) > 1
+  ) {
+    return NextResponse.json({ received: true });
   }
 
   await fulfillCheckoutIntent(verified.checkoutIntentId, reference);

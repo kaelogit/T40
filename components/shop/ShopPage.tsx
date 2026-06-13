@@ -8,7 +8,9 @@ import { SlidersHorizontal, LayoutGrid, List, ArrowDownUp, X, Search } from "luc
 import { motion, AnimatePresence } from "framer-motion";
 import { parseShopSlug } from "@/lib/shop/resolveShopPath";
 import { T40_ACCENT, T40_PARENT_SLUG } from "@/lib/shop/t40Exclusives";
-import { SCENT_FILTER_OPTIONS } from "@/lib/shop/scents";
+import { DEFAULT_SCENT_FILTER_OPTIONS } from "@/lib/shop/scents";
+import type { FilterOption } from "@/lib/shop/loadFilterOptions";
+import { useScentOptions } from "@/hooks/useScentOptions";
 import {
   DEFAULT_PRODUCT_SORT,
   PRODUCT_SORT_OPTIONS,
@@ -32,7 +34,7 @@ const PAGE_TITLES: Record<string, string> = {
   "gift-sets": "Gift Sets",
 };
 
-function getPageTitle(pathname: string): string {
+function getPageTitle(pathname: string, scentOptions: FilterOption[] = DEFAULT_SCENT_FILTER_OPTIONS): string {
   const slug = pathname.replace(/^\/shop\/?/, "").split("/").filter(Boolean);
   if (slug.length === 0) return "Shop";
   if (slug[0] === "brand" && slug[1]) {
@@ -40,7 +42,7 @@ function getPageTitle(pathname: string): string {
   }
   if (slug[0] === "scent") {
     if (!slug[1]) return "Shop by Scent";
-    const match = SCENT_FILTER_OPTIONS.find((s) => s.value === slug[1]);
+    const match = scentOptions.find((s) => s.value === slug[1]);
     return match?.label ?? slug[1].replace(/-/g, " ");
   }
   if (slug.length === 2) {
@@ -62,6 +64,7 @@ function ShopPageInner() {
   const pathFilters = parseShopSlug(
     pathname.replace(/^\/shop\/?/, "").split("/").filter(Boolean)
   );
+  const { options: scentOptions } = useScentOptions();
 
   const queryFilterEntries = Array.from(searchParams.entries()).filter(
     ([key]) => !["sort", "page", "q", "sale", "seed"].includes(key)
@@ -78,7 +81,7 @@ function ShopPageInner() {
   const activeFilterCount = queryFilterEntries.length + pathFilterCount;
 
   const currentSort = normalizeProductSort(searchParams.get("sort"));
-  const pageTitle = getPageTitle(pathname);
+  const pageTitle = getPageTitle(pathname, scentOptions);
   const isT40Page = pathFilters.category === T40_PARENT_SLUG;
   const isScentPage = Boolean(pathFilters.scentHub || pathFilters.scent);
 

@@ -3,6 +3,7 @@ import { requireAdminApi } from "@/lib/admin/apiAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { brandToSlug } from "@/lib/shop/brands";
 import { syncGiftSetItems } from "@/lib/products/giftSets";
+import { ensureScentByName, syncProductScents } from "@/lib/products/productScents";
 import { syncProductVariants } from "@/lib/products/variants.admin";
 import {
   productFormToRow,
@@ -34,7 +35,10 @@ export async function POST(request: Request) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const body = (await request.json()) as ProductFormInput & { newBrandName?: string };
+    const body = (await request.json()) as ProductFormInput & {
+      newBrandName?: string;
+      newScentName?: string;
+    };
     const validationError = validateProductForm(body);
     if (validationError) {
       return NextResponse.json({ error: validationError }, { status: 400 });
@@ -81,6 +85,22 @@ export async function POST(request: Request) {
     }
 
     await syncProductVariants(data.id, body.variants, { onSale: body.flash_sale });
+
+    if (body.category !== "gift-sets") {
+      try {
+        let scentSlugs = [...(body.scentSlugs ?? [])];
+        if (body.newScentName?.trim()) {
+          const slug = await ensureScentByName(supabase, body.newScentName.trim());
+          if (!scentSlugs.includes(slug)) scentSlugs.push(slug);
+        }
+        await syncProductScents(supabase, data.id, scentSlugs);
+      } catch (syncError) {
+        await supabase.from("products").delete().eq("id", data.id);
+        const message =
+          syncError instanceof Error ? syncError.message : "Failed to save scent profiles.";
+        return NextResponse.json({ error: message }, { status: 500 });
+      }
+    }
 
     return NextResponse.json({ product: data });
   } catch {

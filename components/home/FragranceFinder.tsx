@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight, RefreshCw, Sparkles } from "lucide-react";
@@ -9,6 +9,7 @@ import { getProductHref } from "@/lib/products/urls";
 import { formatPrice, getProductPricing } from "@/lib/products/pricing";
 import { normalizeProduct } from "@/lib/products/normalize";
 import type { Tables } from "@/types/database";
+import { loadScentOptions } from "@/lib/shop/scents";
 import {
   FINDER_STEPS,
   fetchFinderResults,
@@ -31,6 +32,21 @@ export default function FragranceFinder() {
   const [results, setResults] = useState<ResultProduct[]>([]);
   const [matchQuality, setMatchQuality] = useState<FinderMatchQuality>("fallback");
   const [loading, setLoading] = useState(false);
+  const [finderSteps, setFinderSteps] = useState(FINDER_STEPS);
+
+  useEffect(() => {
+    loadScentOptions(supabase).then((opts) => {
+      if (!opts.length) return;
+      setFinderSteps([
+        FINDER_STEPS[0],
+        {
+          ...FINDER_STEPS[1],
+          options: opts.map((o) => ({ label: o.label, value: o.value })),
+        },
+        FINDER_STEPS[2],
+      ]);
+    });
+  }, []);
 
   const handleSelect = async (key: keyof FinderAnswers, value: string) => {
     const newAnswers = { ...answers, [key]: value };
@@ -60,7 +76,7 @@ export default function FragranceFinder() {
     if (step > 1) setStep(step - 1);
   };
 
-  const currentStep = step >= 1 && step <= 3 ? FINDER_STEPS[step - 1] : null;
+  const currentStep = step >= 1 && step <= 3 ? finderSteps[step - 1] : null;
 
   return (
     <section className="w-full py-20 lg:py-28 border-t border-t40-grey/10 bg-t40-white">
@@ -80,7 +96,7 @@ export default function FragranceFinder() {
             </p>
             {step >= 1 && step <= 3 && (
               <div className="hidden lg:flex flex-col gap-2 text-[10px] font-bold uppercase tracking-widest font-heading text-t40-grey">
-                {FINDER_STEPS.map((s, i) => (
+                {finderSteps.map((s, i) => (
                   <span
                     key={s.key}
                     className={step > i ? "text-[#d94625]" : step === i + 1 ? "text-t40-black" : ""}

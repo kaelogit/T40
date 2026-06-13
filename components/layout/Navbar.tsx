@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getProductHref } from "@/lib/products/urls";
 import { isSaleActive } from "@/lib/products/sale";
 import { loadBrandOptions } from "@/lib/shop/brands";
-import { SCENT_NAV_LINKS } from "@/lib/shop/scents";
+import { buildScentNavLinks, loadScentOptions } from "@/lib/shop/scents";
 import { SHOP_COLLECTIONS, shopCollectionHref } from "@/lib/shop/collections";
 import { searchProducts } from "@/lib/search/searchProducts";
 
@@ -74,7 +74,7 @@ const BASE_CATEGORIES = [
   {
     label: "Shop by Scent",
     href: "/shop/scent",
-    children: SCENT_NAV_LINKS,
+    children: [] as { label: string; href: string }[],
   },
 ];
 
@@ -163,6 +163,23 @@ export default function Navbar() {
           )
         );
       });
+  }, []);
+
+  // Load Scents
+  useEffect(() => {
+    loadScentOptions(supabase).then((scents) => {
+      if (scents.length === 0) return;
+      setMenuItems((prev) =>
+        prev.map((item) =>
+          item.label === "Shop by Scent"
+            ? {
+                ...item,
+                children: buildScentNavLinks(scents),
+              }
+            : item
+        )
+      );
+    });
   }, []);
 
   // Load Brands

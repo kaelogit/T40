@@ -10,7 +10,6 @@ import FlashSaleEditor from "./FlashSaleEditor";
 import { nameToSlug } from "@/lib/products/slug";
 import {
   OCCASION_OPTIONS,
-  SCENT_OPTIONS,
   getProductFormErrors,
   GIFT_SET_DEFAULT_BRAND,
   MIN_PRODUCT_DESCRIPTION_LENGTH,
@@ -43,6 +42,7 @@ function FieldLabel({
 }
 
 type Brand = { id: string; name: string; slug: string };
+type Scent = { id: string; name: string; slug: string };
 
 const emptyForm: ProductFormInput = {
   name: "",
@@ -50,7 +50,7 @@ const emptyForm: ProductFormInput = {
   brand: "",
   category: "unisex",
   subcategory: null,
-  scentSlug: "",
+  scentSlugs: [],
   occasion: null,
   description: null,
   pricingMode: "single",
@@ -87,8 +87,11 @@ export default function ProductForm({ productId, initial }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<ProductFormInput>(() => ({ ...emptyForm, ...initial }));
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [scents, setScents] = useState<Scent[]>([]);
   const [newBrand, setNewBrand] = useState("");
   const [useNewBrand, setUseNewBrand] = useState(false);
+  const [newScent, setNewScent] = useState("");
+  const [useNewScent, setUseNewScent] = useState(false);
   const [slugManual, setSlugManual] = useState(Boolean(initial?.slug));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,6 +113,9 @@ export default function ProductForm({ productId, initial }: Props) {
     fetch("/api/admin/brands")
       .then((r) => r.json())
       .then((d) => setBrands(d.brands ?? []));
+    fetch("/api/admin/scents")
+      .then((r) => r.json())
+      .then((d) => setScents(d.scents ?? []));
   }, []);
 
   const loadSubcategories = useCallback(async (category: string) => {
@@ -258,7 +264,8 @@ export default function ProductForm({ productId, initial }: Props) {
         ? form.variants.map((v) => ({ ...v, label: "", sale_price: null }))
         : form.variants,
       newBrandName: useNewBrand && !brandLockedToHouse ? newBrand.trim() : undefined,
-    } as ProductFormInput & { newBrandName?: string };
+      newScentName: useNewScent && !isGiftSet ? newScent.trim() : undefined,
+    } as ProductFormInput & { newBrandName?: string; newScentName?: string };
 
     const errors = getProductFormErrors(payload);
     if (errors.length) {
@@ -317,7 +324,7 @@ export default function ProductForm({ productId, initial }: Props) {
         ) : (
           <p>
             Name, slug, brand, description (at least {MIN_PRODUCT_DESCRIPTION_LENGTH} characters),
-            scent profile, occasion, price, at least one image
+            scent profiles, occasion, price, at least one image
             {showSubcategories ? ", and subcategory" : ""}.
           </p>
         )}
@@ -529,20 +536,62 @@ export default function ProductForm({ productId, initial }: Props) {
                   </p>
                 </div>
               )}
-              <div>
-                <FieldLabel required>Scent profile</FieldLabel>
-                <select
-                  value={form.scentSlug}
-                  onChange={(e) => set("scentSlug", e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="">Select scent...</option>
-                  {SCENT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+              <div className="sm:col-span-2 space-y-3">
+                <FieldLabel required>Scent profiles</FieldLabel>
+                <p className="text-[10px] text-neutral-400 -mt-1">
+                  Select all that apply — many perfumes span more than one scent family.
+                </p>
+                <div className="border border-neutral-200 p-4 grid sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {scents.map((scent) => {
+                    const checked = form.scentSlugs.includes(scent.slug);
+                    return (
+                      <label
+                        key={scent.id}
+                        className="flex items-center gap-2 cursor-pointer text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            setForm((f) => ({
+                              ...f,
+                              scentSlugs: checked
+                                ? f.scentSlugs.filter((s) => s !== scent.slug)
+                                : [...f.scentSlugs, scent.slug],
+                            }));
+                          }}
+                        />
+                        {scent.name}
+                      </label>
+                    );
+                  })}
+                  {scents.length === 0 && (
+                    <p className="text-xs text-neutral-400 sm:col-span-2">
+                      No scents loaded yet — run the scents migration or add one below.
+                    </p>
+                  )}
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useNewScent}
+                    onChange={(e) => setUseNewScent(e.target.checked)}
+                  />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">
+                    Add new scent
+                  </span>
+                </label>
+                {useNewScent && (
+                  <>
+                    <FieldLabel required>New scent name</FieldLabel>
+                    <input
+                      value={newScent}
+                      onChange={(e) => setNewScent(e.target.value)}
+                      placeholder="e.g. Smoky, Powdery"
+                      className={inputClass}
+                    />
+                  </>
+                )}
               </div>
               <div>
                 <FieldLabel required>Occasion</FieldLabel>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { hasAdminClient } from "@/lib/supabase/admin";
-import { getStripe } from "@/lib/stripe";
-import { fulfillCheckoutIntent } from "@/lib/orders/checkoutIntent";
+import { getStripe, verifyStripeCheckoutSession } from "@/lib/stripe";
+import { fulfillCheckoutIntent, getCheckoutIntent } from "@/lib/orders/checkoutIntent";
 import Stripe from "stripe";
 
 export async function POST(request: Request) {
@@ -23,15 +23,28 @@ export async function POST(request: Request) {
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const checkoutIntentId = session.metadata?.checkout_intent_id;
+    const sessionId = session.id;
 
-    if (checkoutIntentId && hasAdminClient() && session.payment_status === "paid") {
-      await fulfillCheckoutIntent(checkoutIntentId, session.id);
+    if (!sessionId || !hasAdminClient()) {
+      return NextResponse.json({ received: true });
+    }
+
+    const intent = session.metadata?.checkout_intent_id
+      ? await getCheckoutIntent(session.metadata.checkout_intent_id)
+      : null;
+
+    const verified = await verifyStripeCheckoutSession(sessionId, {
+      expectedIntentId: session.metadata?.checkout_intent_id,
+      expectedTotalNgn: intent ? Number(intent.total) : undefined,
+    });
+
+    if (verified.ok) {
+      await fulfillCheckoutIntent(verified.checkoutIntentId, verified.sessionId);
     }
   }
 
