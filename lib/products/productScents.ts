@@ -5,18 +5,24 @@ export async function getProductScentSlugs(
   supabase: SupabaseClient,
   productId: string
 ): Promise<string[]> {
-  const { data } = await supabase
+  const { data: links, error: linkError } = await supabase
     .from("product_scents")
-    .select("scents(slug)")
+    .select("scent_id")
     .eq("product_id", productId);
 
-  return (data ?? [])
-    .map((row) => {
-      const scent = row.scents as { slug?: string } | { slug?: string }[] | null;
-      if (Array.isArray(scent)) return scent[0]?.slug;
-      return scent?.slug;
-    })
-    .filter((slug): slug is string => Boolean(slug));
+  if (linkError) throw new Error(linkError.message);
+
+  const scentIds = (links ?? []).map((row) => row.scent_id).filter(Boolean);
+  if (!scentIds.length) return [];
+
+  const { data: scents, error: scentError } = await supabase
+    .from("scents")
+    .select("slug")
+    .in("id", scentIds);
+
+  if (scentError) throw new Error(scentError.message);
+
+  return (scents ?? []).map((row) => row.slug).filter(Boolean);
 }
 
 export async function ensureScentByName(

@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import ProductForm from "@/components/admin/ProductForm";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getGiftSetItemIds } from "@/lib/products/giftSets";
+import { getProductScentSlugs } from "@/lib/products/productScents";
+import { mapDbVariants } from "@/lib/products/variants";
 import { rowToProductFormWithGiftIds } from "@/lib/admin/productForm";
-
 import { isGiftSetProduct } from "@/lib/products/isGiftSetProduct";
 
 type Props = { params: Promise<{ id: string }> };
@@ -26,6 +27,15 @@ export default async function EditProductPage({ params }: Props) {
 
   const giftSetProductIds = isGiftSet ? await getGiftSetItemIds(id) : [];
 
+  const scentSlugs = isGiftSet ? [] : await getProductScentSlugs(supabase, id);
+
+  const { data: variants } = await supabase
+    .from("product_variants")
+    .select("*")
+    .eq("product_id", id)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
   return (
     <div>
       <h1 className="text-2xl font-black uppercase tracking-tighter mb-8">
@@ -33,7 +43,12 @@ export default async function EditProductPage({ params }: Props) {
       </h1>
       <ProductForm
         productId={id}
-        initial={rowToProductFormWithGiftIds(data, giftSetProductIds)}
+        initial={rowToProductFormWithGiftIds(
+          data,
+          giftSetProductIds,
+          mapDbVariants(variants ?? []),
+          scentSlugs
+        )}
       />
     </div>
   );

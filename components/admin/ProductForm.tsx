@@ -92,6 +92,8 @@ export default function ProductForm({ productId, initial }: Props) {
   const [useNewBrand, setUseNewBrand] = useState(false);
   const [newScent, setNewScent] = useState("");
   const [useNewScent, setUseNewScent] = useState(false);
+  const [scentSaving, setScentSaving] = useState(false);
+  const [scentAddError, setScentAddError] = useState<string | null>(null);
   const [slugManual, setSlugManual] = useState(Boolean(initial?.slug));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,6 +153,39 @@ export default function ProductForm({ productId, initial }: Props) {
     }
     loadSubcategories(form.category);
   }, [form.category, showSubcategories, loadSubcategories]);
+
+  const createScent = async () => {
+    const name = newScent.trim();
+    if (!name || isGiftSet) return;
+
+    setScentSaving(true);
+    setScentAddError(null);
+    try {
+      const res = await fetch("/api/admin/scents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const d = (await res.json()) as { scent?: Scent; error?: string };
+      if (!res.ok || !d.scent) throw new Error(d.error ?? "Could not add scent.");
+
+      setScents((prev) => {
+        if (prev.some((s) => s.id === d.scent!.id)) return prev;
+        return [...prev, d.scent!].sort((a, b) => a.name.localeCompare(b.name));
+      });
+      setForm((f) => ({
+        ...f,
+        scentSlugs: f.scentSlugs.includes(d.scent!.slug)
+          ? f.scentSlugs
+          : [...f.scentSlugs, d.scent!.slug],
+      }));
+      setNewScent("");
+    } catch (err) {
+      setScentAddError(err instanceof Error ? err.message : "Could not add scent.");
+    } finally {
+      setScentSaving(false);
+    }
+  };
 
   const createSubcategory = async () => {
     const name = newSubcategoryName.trim();
@@ -575,22 +610,48 @@ export default function ProductForm({ productId, initial }: Props) {
                   <input
                     type="checkbox"
                     checked={useNewScent}
-                    onChange={(e) => setUseNewScent(e.target.checked)}
+                    onChange={(e) => {
+                      setUseNewScent(e.target.checked);
+                      setScentAddError(null);
+                    }}
                   />
                   <span className="text-[10px] font-bold uppercase tracking-widest">
                     Add new scent
                   </span>
                 </label>
                 {useNewScent && (
-                  <>
+                  <div className="space-y-2">
                     <FieldLabel required>New scent name</FieldLabel>
-                    <input
-                      value={newScent}
-                      onChange={(e) => setNewScent(e.target.value)}
-                      placeholder="e.g. Smoky, Powdery"
-                      className={inputClass}
-                    />
-                  </>
+                    <div className="flex gap-2">
+                      <input
+                        value={newScent}
+                        onChange={(e) => setNewScent(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            void createScent();
+                          }
+                        }}
+                        placeholder="e.g. Smoky, Powdery"
+                        className={inputClass}
+                      />
+                      <button
+                        type="button"
+                        onClick={createScent}
+                        disabled={scentSaving || !newScent.trim()}
+                        className="shrink-0 px-4 py-2.5 bg-black text-white text-[10px] font-bold uppercase tracking-widest disabled:opacity-50"
+                      >
+                        {scentSaving ? "Adding…" : "Add"}
+                      </button>
+                    </div>
+                    {scentAddError && (
+                      <p className="text-xs text-red-600">{scentAddError}</p>
+                    )}
+                    <p className="text-[10px] text-neutral-400">
+                      Add as many as you need — each one is saved immediately and selected for this
+                      product.
+                    </p>
+                  </div>
                 )}
               </div>
               <div>

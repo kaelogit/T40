@@ -38,6 +38,12 @@ export async function POST(request: Request) {
 
     if (error) {
       if (error.code === "23505") {
+        const { data: existing } = await supabase
+          .from("scents")
+          .select("id, name, slug")
+          .eq("slug", scentToSlug(trimmed))
+          .maybeSingle();
+        if (existing) return NextResponse.json({ scent: existing });
         return NextResponse.json({ error: "Scent already exists." }, { status: 400 });
       }
       return NextResponse.json({ error: error.message }, { status: 500 });
