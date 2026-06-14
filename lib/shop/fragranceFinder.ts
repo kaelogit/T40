@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { scentSlugToMatchTerms } from "./scents";
+import { productMatchesGenderFilter } from "@/lib/catalog/audience";
 
 export type FinderAnswers = {
   gender: string;
@@ -43,12 +44,11 @@ export const FINDER_STEPS = [
   },
 ];
 
-function matchesGender(category: string | null | undefined, gender: string): boolean {
-  if (!gender || gender === "unisex") return true;
-  const cat = (category ?? "").toLowerCase();
-  if (!cat) return true;
-  if (cat === gender || cat === "unisex" || cat === "t40-exclusives") return true;
-  return false;
+function matchesGender(
+  product: { category?: string | null; audience?: string | null },
+  gender: string
+): boolean {
+  return productMatchesGenderFilter(product, gender);
 }
 
 function matchesScent(notes: string | null | undefined, scentSlug: string): boolean {
@@ -67,17 +67,18 @@ function matchesOccasion(occasion: string | null | undefined, target: string): b
 export function scoreFinderProduct(
   product: {
     category?: string | null;
+    audience?: string | null;
     notes?: string | null;
     occasion?: string | null;
   },
   answers: FinderAnswers
 ): number {
-  if (answers.gender && answers.gender !== "unisex" && !matchesGender(product.category, answers.gender)) {
+  if (answers.gender && answers.gender !== "unisex" && !matchesGender(product, answers.gender)) {
     return -1;
   }
 
   let score = 0;
-  if (answers.gender && matchesGender(product.category, answers.gender)) score += 3;
+  if (answers.gender && matchesGender(product, answers.gender)) score += 3;
   if (answers.scent && matchesScent(product.notes, answers.scent)) score += 3;
   if (answers.occasion && matchesOccasion(product.occasion, answers.occasion)) score += 2;
 

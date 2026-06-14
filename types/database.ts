@@ -15,6 +15,7 @@ export type Database = {
           name: string;
           category: string | null;
           subcategory: string | null;
+          audience: string | null;
           price: number;
           sale_price: number | null;
           on_sale: boolean | null;
@@ -45,6 +46,7 @@ export type Database = {
           name: string;
           category?: string | null;
           subcategory?: string | null;
+          audience?: string | null;
           price: number;
           sale_price?: number | null;
           on_sale?: boolean | null;

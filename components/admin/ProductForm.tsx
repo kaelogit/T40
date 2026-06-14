@@ -15,6 +15,7 @@ import {
   MIN_PRODUCT_DESCRIPTION_LENGTH,
   type ProductFormInput,
 } from "@/lib/admin/productForm";
+import { AUDIENCE_OPTIONS } from "@/lib/catalog/audience";
 import {
   categoryHasSubcategories,
   SINGLE_PRODUCT_CATEGORY_OPTIONS,
@@ -50,6 +51,7 @@ const emptyForm: ProductFormInput = {
   brand: "",
   category: "unisex",
   subcategory: null,
+  audience: "unisex",
   scentSlugs: [],
   occasion: null,
   description: null,
@@ -256,6 +258,9 @@ export default function ProductForm({ productId, initial }: Props) {
         ];
       } else if (category === "t40-exclusives") {
         next.brand = T40_HOUSE_BRAND;
+        if (!next.audience) next.audience = "unisex";
+      } else if (category === "women" || category === "men" || category === "unisex") {
+        next.audience = category;
       }
       return next;
     });
@@ -487,6 +492,27 @@ export default function ProductForm({ productId, initial }: Props) {
                   )}
                 </p>
               </div>
+              {isT40Exclusive && (
+                <div>
+                  <FieldLabel required>Intended for</FieldLabel>
+                  <select
+                    value={form.audience ?? ""}
+                    onChange={(e) => set("audience", e.target.value || null)}
+                    className={inputClass}
+                  >
+                    <option value="">Select…</option>
+                    {AUDIENCE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-neutral-400 mt-1">
+                    Where this appears in shop filters — e.g. Women shows under /shop/women and
+                    when T40 is selected as a brand.
+                  </p>
+                </div>
+              )}
               {showSubcategories && (
                 <div className="space-y-3">
                   <label className="flex items-center gap-2 cursor-pointer">

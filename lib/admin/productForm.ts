@@ -2,6 +2,7 @@ import {
   PRODUCT_CATEGORY_OPTIONS,
   categoryHasSubcategories,
 } from "@/lib/catalog/productCategories";
+import { resolveProductAudience } from "@/lib/catalog/audience";
 import { DEFAULT_SCENT_FILTER_OPTIONS, scentSlugsToNotes } from "@/lib/shop/scents";
 import type { ProductVariant, VariantFormInput, PricingMode } from "@/lib/products/variants";
 
@@ -39,6 +40,7 @@ export type ProductFormInput = {
   brand: string;
   category: string;
   subcategory: string | null;
+  audience: string | null;
   scentSlugs: string[];
   occasion: string | null;
   description: string | null;
@@ -133,6 +135,7 @@ export function productFormToRow(input: ProductFormInput) {
     brand: isGiftSet ? GIFT_SET_DEFAULT_BRAND : input.brand.trim(),
     category: input.category,
     subcategory: isGiftSet ? "gift-sets" : input.subcategory?.trim() || null,
+    audience: resolveProductAudience(input.category, input.audience),
     product_type: isGiftSet ? "gift_set" : "single",
     notes: isGiftSet ? null : scentSlugsToNotes(input.scentSlugs),
     occasion: isGiftSet ? null : input.occasion || null,
@@ -177,6 +180,9 @@ export function getProductFormErrors(
 
   if (input.category === "t40-exclusives" && !input.subcategory) {
     errors.push("Subcategory is required for T40 Exclusives.");
+  }
+  if (input.category === "t40-exclusives" && !input.audience) {
+    errors.push("Intended for (Women / Men / Unisex) is required for T40 Exclusives.");
   }
   if (
     categoryHasSubcategories(input.category) &&
@@ -284,6 +290,10 @@ export function rowToProductForm(
     brand: (row.brand as string) ?? "",
     category: (row.category as string) ?? "unisex",
     subcategory: (row.subcategory as string | null) ?? null,
+    audience: resolveProductAudience(
+      (row.category as string) ?? "unisex",
+      (row.audience as string | null) ?? null
+    ),
     scentSlugs:
       scentSlugs.length > 0
         ? scentSlugs

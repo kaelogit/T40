@@ -23,6 +23,7 @@ export interface Product {
   category?: string;
   product_type?: string | null;
   subcategory?: string;
+  audience?: string | null;
   sale_price?: number;
   on_sale?: boolean;
   sale_ends_at?: string | null;

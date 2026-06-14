@@ -13,6 +13,7 @@ export function normalizeProduct(row: Tables<"products">): ProductDetail {
     images: row.images?.length ? row.images : [],
     category: row.category ?? undefined,
     subcategory: row.subcategory ?? undefined,
+    audience: row.audience ?? undefined,
     brand: row.brand ?? undefined,
     badge: (row.badge as ProductDetail["badge"]) ?? null,
     notes: row.notes ?? undefined,

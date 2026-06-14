@@ -6,6 +6,10 @@ import {
   T40_PARENT_SLUG,
 } from "./t40Exclusives";
 import { orFilterForAllScents, orFilterForScentSlug } from "./scents";
+import {
+  genderCategoryOrFilter,
+  isGenderCategory,
+} from "@/lib/catalog/audience";
 import { activeSaleOrFilter } from "@/lib/products/sale";
 import { FLASH_SALE_COLLECTION_SLUG } from "./collections";
 import { applyProductSort } from "./applyProductSort";
@@ -139,7 +143,9 @@ export function applyShopFiltersToQuery(
       }
     }
   } else if (!filters.scentHub && !filters.scent) {
-    if (filters.category) {
+    if (filters.category && isGenderCategory(filters.category)) {
+      q = q.or(genderCategoryOrFilter(filters.category));
+    } else if (filters.category) {
       q = q.eq("category", filters.category);
     }
     if (filters.subcategory) {
