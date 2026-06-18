@@ -213,7 +213,7 @@ export const DEFAULT_ABOUT_CONTENT: AboutContent = {
       "Noble UK — Industrialist of the Year 2024",
       "Nigerian British Award Winner 2025",
     ],
-    productSlugs: ["revenge", "sweet-noble", "24th-oud"],
+    productSlugs: ["revenge-by-Gloria-Jones", "sweet-noble", "24th-oud"],
   },
   values: {
     eyebrow: "The T40 Standard",
